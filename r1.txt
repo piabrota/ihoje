@@ -1,0 +1,22 @@
+JUSTFILES - tecnologias
+Framework feito em rust
+porque é importante ter um Makefile
+O que é makefile
+Makefile é um ferramenta que permite manipular entrypoints pra exe
+conforme voce vai adicionando multiplos entrypoints na aplicação
+voce provavelmente tera um comando
+    npm install build
+    npm update
+    docker build
+    use CLOUD CREDENTIALS -> AWS KEY ID,
+Essa é a primeira dica de produtividade
+
+UV/RUFF
+
+Meta
+
+https://www.youtube.com/watch?v=apbZc_9XgNo&ab_channel=VinceOpra
+Find 5 creators:
+
+
+Comprar PC novo

@@ -1,0 +1,4 @@
+geo-converter:
+  host: "api.mapbox.com"
+  api-key: "REDACTED" # env vars can't bind YAML configuration as we do in typesafe config :( ${?GEOCODING_}
+  throttle: "1 second"

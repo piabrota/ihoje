@@ -1,0 +1,27 @@
+- [ ] Scrapper sympla
+- [ ] Scalafix / wartremover
+- [ ] Clean oldrefs
+- [ ] Incremental vs full (incremental threshold should be set as today +7days (event start))
+- [ ] pureconfig-toml
+- [ ] add yaml configuration for Scrape Config as YAML: https://github.com/pureconfig/pureconfig/tree/master/modules/yaml
+- [ ] upgrade sbt
+- [ ] add log for s
+- [ ] Automating bets on caixa economica federal
+- [ ] Sinister notebook
+- [ ] Youtube - posicionar
+- [ ] Vídeo aula Scala language
+-  1 . Introdução
+  - 2. Primeira release
+    3. Scastie, REPL, IDE, scala-cli ah mas eu uso VI, porra, então foda-se você esquisito, você provavelmente é o cara que não se da bem nas festas ... to certo? sacanagem
+- [ ] Evaluate GETKYO solution
+- [ ] GetKyo ACTORS?
+- [ ] TODO supervision
+- [ ] Stealth Scala.js? https://github.com/Mattwmaster58/playwright_stealth/blob/main/playwright_stealth/stealth.py
+- https://github.com/AtuboDad/playwright_stealth
+- https://en.wikipedia.org/wiki/Xvfb
+- Reserve engineer
+- Fancy Automations: Loteria 
+- https://www.amazon.com/MSI-Katana-240Hz-Gaming-Laptop/dp/B0CZPP4PJX/ref=sr_1_5?crid=1MHSTX9E1ZGMQ&dib=eyJ2IjoiMSJ9.L87LYGoex0RRfCTPa009BnuZ8wi9z3xNhKs9RgliagaF8gSacdKmbDUjakIvRXCOVVAguA4Kppyow0xzxJR-RFMyLwg056RYcnks6YxTNiaM4wD2mPR4Vkg6BcKKeCmysErfDbyAsJusMBnqs48sH_pnruW1PxN_Nt4snX9yEfZIpC3BQIXOqJ4qNsq2Yo0_IZMSXBBtpzw69oKhy3L57MeICl05Xwq48L2VBt-FF501pfnLRy6chV3P2EGDpRTUy2mqSavl_NZoN3E_q8t4CWzSiXk_VgJpCm7-iYNjV5E.II-76QXIg7IWKE7dSpgzEhBjChmpCMP18QlhLmTVmmo&dib_tag=se&keywords=gaming%2Blaptop%2B4090&qid=1733642530&refinements=p_n_feature_thirty-three_browse-bin%3A23720421011&rnid=23720416011&s=electronics&sprefix=gaming%2Blaptop%2Caps%2C271&sr=1-5&th=1
+- Dependencies to markdown renderer (SBT plugin -> convert dependencies to markdown style)
+- Dependencies to markdown renderer Python
+- Content creators

@@ -1,0 +1,18 @@
+meta {
+  name: GeocodeConvertEN
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{geocode_host}}/search?q=1850%20Towers%20Crescent%20Plaza%20Tysons%20Corner%2C%20VA%2022182%20USA%0A%0A&api_key={{geocode_api_key}}
+  body: none
+  auth: none
+}
+
+params:query {
+  q: 1850 Towers Crescent Plaza Tysons Corner, VA 22182 USA
+  
+  
+  api_key: {{geocode_api_key}}
+}
