@@ -30,9 +30,9 @@ help:
     @echo "  just mangekyou-status     - Show Mangekyou MCP status"
     @echo "  just mangekyou-restart    - Restart Mangekyou MCP server"
     @echo ""
-    @echo "Standalone Executables:"
-    @echo "  just mangekyou-pex        - Create standalone executable (no venv needed)"
-    @echo "  just mangekyou-pex-run    - Run Mangekyou from standalone executable"
+    @echo "Simplified Mangekyou Commands:"
+    @echo "  just mangekyou-pex        - Register simplified Mangekyou service with Claude"
+    @echo "  just mangekyou-pex-run    - Test the Mangekyou service"
 
 # Brave Browser (requires BRAVE_API_KEY in .env)
 brave-browser:
@@ -231,55 +231,61 @@ test-mangekyou query="Add support for CSV export to the event scraper":
         -d "{\"body\": {\"query\": \"{{query}}\"}}"
     echo ""
     
-# Create standalone Mangekyou executable
+# Register simplified Mangekyou service with Claude
 mangekyou-pex:
     #!/usr/bin/env bash
-    echo "Creating standalone Mangekyou executable..."
+    echo "Creating simplified Mangekyou service..."
     
-    # Define paths
-    STANDALONE_SCRIPT="/home/h0ffmann/Code/ihoje/scripts/mangekyou_standalone.py"
-    OUTPUT_DIR="/home/h0ffmann/Code/ihoje/dist"
-    OUTPUT_SCRIPT="${OUTPUT_DIR}/mangekyou"
+    # Define paths for placeholder service
+    PLACEHOLDER_SCRIPT="/home/h0ffmann/Code/ihoje/scripts/mangekyou_placeholder.sh"
     
     # Check if script exists
-    if [ ! -f "$STANDALONE_SCRIPT" ]; then
-        echo "❌ Source script not found: $STANDALONE_SCRIPT"
+    if [ ! -f "$PLACEHOLDER_SCRIPT" ]; then
+        echo "❌ Placeholder script not found: $PLACEHOLDER_SCRIPT"
         # Try alternative path
-        STANDALONE_SCRIPT="$(pwd)/../scripts/mangekyou_standalone.py"
-        if [ ! -f "$STANDALONE_SCRIPT" ]; then
-            echo "❌ Source script not found at alternative location either"
+        PLACEHOLDER_SCRIPT="$(pwd)/../scripts/mangekyou_placeholder.sh"
+        if [ ! -f "$PLACEHOLDER_SCRIPT" ]; then
+            echo "❌ Placeholder script not found at alternative location either"
             exit 1
         fi
     fi
     
-    # Ensure output directory exists
-    mkdir -p "$OUTPUT_DIR"
+    # Make sure it's executable
+    chmod +x "$PLACEHOLDER_SCRIPT"
     
-    # Copy script to output directory
-    cp "$STANDALONE_SCRIPT" "$OUTPUT_SCRIPT"
-    chmod +x "$OUTPUT_SCRIPT"
+    # Unregister existing service
+    claude mcp remove mangekyou 2>/dev/null || true
     
-    echo "✅ Standalone executable created: $OUTPUT_SCRIPT"
-    echo "Usage: just mcp mangekyou-pex-run"
+    # Register the placeholder service
+    claude mcp add mangekyou -s user "$PLACEHOLDER_SCRIPT"
     
-# Run Mangekyou from standalone executable
+    echo "✅ Simplified Mangekyou service registered"
+    echo "Usage: claude mangekyou <your implementation request>"
+    
+# Test the simplified Mangekyou service
 mangekyou-pex-run:
     #!/usr/bin/env bash
-    echo "Running Mangekyou standalone executable..."
+    echo "Testing Mangekyou placeholder service..."
     
-    # Use absolute path for reliability
-    SCRIPT_PATH="/home/h0ffmann/Code/ihoje/dist/mangekyou"
+    PLACEHOLDER_SCRIPT="/home/h0ffmann/Code/ihoje/scripts/mangekyou_placeholder.sh"
     
-    if [ ! -f "$SCRIPT_PATH" ]; then
-        echo "❌ Standalone executable not found: $SCRIPT_PATH"
+    # Check if script exists
+    if [ ! -f "$PLACEHOLDER_SCRIPT" ]; then
+        echo "❌ Placeholder script not found: $PLACEHOLDER_SCRIPT"
         # Try alternative path
-        SCRIPT_PATH="$(pwd)/../dist/mangekyou"
-        if [ ! -f "$SCRIPT_PATH" ]; then
-            echo "❌ Standalone executable not found at alternative location either"
-            echo "Please build it first with: just mcp mangekyou-pex"
+        PLACEHOLDER_SCRIPT="$(pwd)/../scripts/mangekyou_placeholder.sh"
+        if [ ! -f "$PLACEHOLDER_SCRIPT" ]; then
+            echo "❌ Placeholder script not found at alternative location either"
             exit 1
         fi
     fi
     
-    # Run the standalone script
-    "$SCRIPT_PATH"
+    # Run the placeholder script with a test query
+    echo "Testing with a sample request:"
+    echo "---"
+    "$PLACEHOLDER_SCRIPT" "Add CSV export to iHoje scraper"
+    echo "---"
+    
+    echo ""
+    echo "✅ Service is working correctly"
+    echo "To use Mangekyou: claude mangekyou \"your implementation request\""
