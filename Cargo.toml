@@ -1,0 +1,59 @@
+[package]
+name = "ihoje"
+version = "0.1.0"
+edition = "2021"
+description = "A simplified event scraper using Firecrawl"
+
+[[bench]]
+name = "provider_benchmark"
+harness = false
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.36.0", features = ["full", "time", "sync"] }
+# Rate limit and queue management
+tokio-util = "0.7.10"
+# Parallel tasks
+futures = "0.3.30"
+
+# Web scraping
+firecrawl = "1.0.0"
+scraper = "0.18.1"  # HTML parsing library
+
+# Serialization
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
+csv = "1.3.0"  # For CSV export
+
+# Logging and error handling
+log = "0.4.20"
+simplelog = "0.12.1"
+anyhow = "1.0.81"
+
+# Date handling
+chrono = { version = "0.4.35", features = ["serde"] }
+
+# Utils
+dotenv = "0.15.0"
+regex = "1.10.3"  # For text processing
+uuid = { version = "1.7.0", features = ["v4"] }
+
+# Database
+rusqlite = { version = "0.31.0", features = ["bundled"] }
+# PostgreSQL support
+tokio-postgres = { version = "0.7.10", features = ["with-chrono-0_4"] }
+deadpool-postgres = "0.12.1"
+postgres-types = { version = "0.2.6", features = ["derive"] }
+clap = { version = "4.5.3", features = ["derive"] }
+
+# Test dependencies
+tokio-test = "0.4.3"
+thiserror = "2.0.12"
+criterion = { version = "0.5.1", features = ["async_tokio"] }
+
+# New dependencies
+axum = "0.7.4"        # Web framework
+reqwest = "0.12.0"    # HTTP client
+language-tags = "0.3.2"  # Language detection
+tracing = "0.1.40"    # Better tracing and logging
+polars = "0.38.1"     # Fast data processing

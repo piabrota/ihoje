@@ -1,0 +1,44 @@
+name: Issue Solver
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Run weekly at midnight on Sunday
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  process-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install just
+        uses: extractions/setup-just@v1
+        with:
+          just-version: 1.13
+
+      - name: Install Claude CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/anthropics/anthropic-cli/main/install.sh | sh
+          echo "$HOME/.anthropic/bin" >> $GITHUB_PATH
+
+      - name: Configure Claude
+        run: |
+          mkdir -p ~/.config/anthropic
+          echo "api_key = ${{ secrets.ANTHROPIC_API_KEY }}" > ~/.config/anthropic/config.toml
+
+      - name: Run issue solver
+        run: |
+          just solve-issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
