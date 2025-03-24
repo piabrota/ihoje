@@ -26,7 +26,7 @@ def write_pid():
         f.write(str(os.getpid()))
 
 def register_with_claude():
-    """Register the server with Claude MCP"""
+    """Register the server with Claude MCP using script mode only"""
     script_path = os.path.abspath(__file__)
     
     # First try to remove any existing registration
@@ -40,10 +40,23 @@ def register_with_claude():
     except (subprocess.SubprocessError, FileNotFoundError):
         pass  # Ignore errors when removing
     
-    # Now add the server as a URL-based MCP server
+    # Create a simple wrapper script that calls the HTTP server directly
+    wrapper_script = """#!/bin/bash
+# Simple wrapper to test Mangekyou server
+curl -s -X POST "http://localhost:17891/mcp/v1/mangekyou" \\
+    -H "Content-Type: application/json" \\
+    -d "{\\\"body\\\": {\\\"query\\\": \\\"$*\\\"}}"
+"""
+    
+    wrapper_path = os.path.join(os.path.dirname(script_path), "mangekyou_wrapper.sh")
     try:
+        with open(wrapper_path, "w") as f:
+            f.write(wrapper_script)
+        os.chmod(wrapper_path, 0o755)  # Make executable
+        
+        # Register using the wrapper script
         result = subprocess.run(
-            ["claude", "mcp", "add", MCP_NAME, "-u", f"http://localhost:{PORT}"],
+            ["claude", "mcp", "add", MCP_NAME, "-s", "user", wrapper_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -54,7 +67,7 @@ def register_with_claude():
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to register with Claude MCP: {e.stderr}")
         
-        # Fallback to script registration if URL doesn't work
+        # Fallback to direct script registration
         try:
             result = subprocess.run(
                 ["claude", "mcp", "add", MCP_NAME, "-s", "user", f"{sys.executable} {script_path}"],
@@ -63,11 +76,14 @@ def register_with_claude():
                 text=True,
                 check=True
             )
-            print(f"✅ Registered with Claude MCP (script fallback): {result.stdout.strip()}")
+            print(f"✅ Registered with Claude MCP (fallback): {result.stdout.strip()}")
             return True
         except subprocess.CalledProcessError as e2:
-            print(f"❌ Failed with script fallback too: {e2.stderr}")
+            print(f"❌ All registration methods failed: {e2.stderr}")
             return False
+    except (IOError, OSError) as e:
+        print(f"❌ Error creating wrapper script: {e}")
+        return False
     except FileNotFoundError:
         print("❌ Claude CLI not found. Please install it first.")
         return False
@@ -171,6 +187,15 @@ def cleanup(server):
     server.shutdown()
     if os.path.exists(PID_FILE):
         os.remove(PID_FILE)
+    
+    # Remove wrapper script if it exists
+    wrapper_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mangekyou_wrapper.sh")
+    if os.path.exists(wrapper_path):
+        try:
+            os.remove(wrapper_path)
+        except:
+            pass
+    
     unregister_from_claude()
     print("Goodbye!")
 
