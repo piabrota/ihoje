@@ -86,18 +86,18 @@ improve-python:
 plan-improvement task description:
     @bash scripts/improvement-plan.sh "{{task}}" "{{description}}"
 
-# Mangekyou Sharingan MCP shortcuts
+# Mangekyou Sharingan MCP simplified commands
 mangekyou:
     @just mcp mangekyou
 
-register-mangekyou:
-    @just mcp register-mangekyou
-
-start-mangekyou:
-    @just mcp start-mangekyou
+mangekyou-stop:
+    @just mcp mangekyou-stop
+    
+mangekyou-status:
+    @just mcp mangekyou-status
+    
+mangekyou-restart:
+    @just mcp mangekyou-restart
     
 test-mangekyou query="Add support for CSV export to the event scraper":
-    @just --justfile justfiles/mcp.justfile test-mangekyou "{{query}}"
-    
-mangekyou-all:
-    @just mcp mangekyou-all
+    @just mcp test-mangekyou "{{query}}"
