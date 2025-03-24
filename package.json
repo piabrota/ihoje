@@ -8,9 +8,13 @@
     "dev": "nodemon src/app.js",
     "test": "jest",
     "lint": "eslint src/**/*.js",
-    "scrape": "node src/scripts/manual-scrape.js"
+    "scrape": "node src/scripts/manual-scrape.js",
+    "seed": "node src/scripts/populate-db.js",
+    "seed:pg": "node src/scripts/populate-postgres.js",
+    "migrate": "node src/scripts/run-migration.js"
   },
   "dependencies": {
+    "@faker-js/faker": "^9.6.0",
     "@supabase/supabase-js": "^2.49.1",
     "axios": "^1.8.2",
     "cheerio": "^1.0.0",
@@ -20,6 +24,7 @@
     "express": "^4.21.2",
     "node-cron": "^3.0.3",
     "node-html-parser": "^7.0.1",
+    "pg": "^8.13.3",
     "pino": "^9.6.0",
     "puppeteer": "^24.4.0",
     "uuid": "^11.1.0",

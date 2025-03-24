@@ -1,0 +1,170 @@
+# Master Justfile for organizing commands
+# This file provides a clean interface to all the specialized command files
+
+# Load .env file if present
+set dotenv-load
+
+# Set default city (used in various commands)
+default_city := "FL"
+
+# Show all available recipes
+default:
+    @just --list
+
+# Display comprehensive help
+help:
+    @echo "======= iHoje Commands ======="
+    @echo ""
+    @echo "Main Command Categories:"
+    @echo "  just run                 - Run the application with default settings"
+    @echo "  just run-city FL         - Run with specific city"
+    @echo "  just build               - Build the Rust application"
+    @echo "  just test                - Run all tests"
+    @echo "  just app-help            - Show application CLI options"
+    @echo ""
+    @echo "Specialized Commands:"
+    @echo "  just podman              - Run Podman/container commands (use with subcommand)"
+    @echo "  just db                  - Run database commands (use with subcommand)"
+    @echo "  just mcp                 - Run MCP tool commands (use with subcommand)"
+    @echo "  just task                - Run task management commands (use with subcommand)"
+    @echo "  just util                - Run utility commands (use with subcommand)"
+    @echo "  just run                 - Run application with various parameters"
+    @echo "  just test                - Run test commands (use with subcommand)"
+    @echo "  just security            - Run security commands (use with subcommand)"
+    @echo "  just claude              - Run Claude AI commands (use with subcommand)"
+    @echo "  just provider            - Run provider commands (use with subcommand)"
+    @echo "  just hooks               - Run git hooks commands (use with subcommand)"
+    @echo ""
+    @echo "Improvement Commands:"
+    @echo "  just improve-just        - Find and apply justfile best practices"
+    @echo "  just improve-rust        - Find and apply Rust best practices"
+    @echo "  just improve-python      - Find and apply Python best practices"
+    @echo ""
+    @echo "Context Commands:"
+    @echo "  just dump-context        - Print README.md, CLAUDE.md, CLAUDE_BOOTSTRAP.md"
+    @echo "  just context-file        - Save context files to a combined markdown file"
+    @echo ""
+    @echo "For detailed help on a category: just <category>-help"
+    @echo "For a complete list of commands: just --list"
+
+# Build the Rust application
+build:
+    cargo build
+
+# Run the application with default settings
+run +ARGS="":
+    cargo run {{ARGS}}
+
+# Run the application with a specific city
+run-city city=default_city:
+    CITY={{city}} cargo run
+
+# Run the application with help information
+app-help:
+    cargo run -- --help
+
+# Run all tests (shortcut for test all)
+test:
+    @just --justfile justfiles/test.justfile all
+
+# Run the specialized podman justfile commands
+podman +ARGS:
+    @just --justfile justfiles/podman.justfile {{ARGS}}
+
+# Show podman commands help
+podman-help:
+    @just --justfile justfiles/podman.justfile help
+
+# Run the specialized database justfile commands
+db +ARGS:
+    @just --justfile justfiles/db.justfile {{ARGS}}
+
+# Show database commands help
+db-help:
+    @just --justfile justfiles/db.justfile help
+
+# Run the specialized MCP justfile commands
+mcp +ARGS:
+    @just --justfile justfiles/mcp.justfile {{ARGS}}
+
+# Show MCP commands help
+mcp-help:
+    @just --justfile justfiles/mcp.justfile help
+
+# Run the specialized task justfile commands
+task +ARGS:
+    @just --justfile justfiles/task.justfile {{ARGS}}
+
+# Show task commands help
+task-help:
+    @just --justfile justfiles/task.justfile help
+
+# Run the specialized utility justfile commands
+util +ARGS:
+    @just --justfile justfiles/util.justfile {{ARGS}}
+
+# Show utility commands help
+util-help:
+    @just --justfile justfiles/util.justfile help
+
+# Run the specialized run commands justfile
+runner +ARGS:
+    @just --justfile justfiles/run.justfile {{ARGS}}
+
+# Run the specialized test commands justfile
+tester +ARGS:
+    @just --justfile justfiles/test.justfile {{ARGS}}
+
+# Show test commands help
+test-help:
+    @just --justfile justfiles/test.justfile help
+
+# Run the specialized security commands justfile
+security +ARGS:
+    @just --justfile justfiles/security.justfile {{ARGS}}
+
+# Show security commands help
+security-help:
+    @just --justfile justfiles/security.justfile help
+
+# Run the specialized Claude commands justfile
+claude +ARGS:
+    @just --justfile justfiles/claude.justfile {{ARGS}}
+
+# Show Claude commands help
+claude-help:
+    @just --justfile justfiles/claude.justfile help
+
+# Run the specialized provider commands justfile
+provider +ARGS:
+    @just --justfile justfiles/provider.justfile {{ARGS}}
+
+# Show provider commands help
+provider-help:
+    @just --justfile justfiles/provider.justfile help
+    
+# Run the specialized hooks commands justfile
+hooks +ARGS:
+    @just --justfile justfiles/hooks.justfile {{ARGS}}
+
+# Show hooks commands help
+hooks-help:
+    @just --justfile justfiles/hooks.justfile help
+
+# Improvement recipes
+improve-just:
+    @sh scripts/improve-justfiles.sh
+
+improve-rust:
+    @sh scripts/improve-rust.sh
+
+improve-python:
+    @sh scripts/improve-python.sh
+
+# Dump context files to console (shortcut for util dump-context)
+dump-context:
+    @just --justfile justfiles/util.justfile dump-context
+
+# Write context files to a single output file (shortcut for util context-file)
+context-file output="context.md":
+    @just --justfile justfiles/util.justfile context-file {{output}}

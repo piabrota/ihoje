@@ -15,11 +15,23 @@ CREATE TABLE IF NOT EXISTS events (
   id BIGSERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   date TIMESTAMP WITH TIME ZONE,
+  date_end TIMESTAMP WITH TIME ZONE,
   venue_id BIGINT REFERENCES venues(id),
   description TEXT,
   image_url TEXT,
   source TEXT,
   source_url TEXT,
+  location_type TEXT CHECK (location_type IN ('onsite', 'remote', 'hybrid')),
+  state TEXT,
+  city TEXT,
+  start_price BIGINT NOT NULL,
+  price BIGINT NOT NULL,
+  fee BIGINT NOT NULL,
+  batch SMALLINT,
+  has_half BOOLEAN NOT NULL DEFAULT FALSE,
+  is_soldout BOOLEAN NOT NULL DEFAULT FALSE,
+  producer TEXT,
+  share_link TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -47,7 +59,15 @@ CREATE TABLE IF NOT EXISTS price_history (
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS events_venue_id_idx ON events(venue_id);
 CREATE INDEX IF NOT EXISTS events_date_idx ON events(date);
+CREATE INDEX IF NOT EXISTS events_date_end_idx ON events(date_end);
 CREATE INDEX IF NOT EXISTS events_name_idx ON events(name);
+CREATE INDEX IF NOT EXISTS events_location_type_idx ON events(location_type);
+CREATE INDEX IF NOT EXISTS events_price_idx ON events(price);
+CREATE INDEX IF NOT EXISTS events_start_price_idx ON events(start_price);
+CREATE INDEX IF NOT EXISTS events_state_idx ON events(state);
+CREATE INDEX IF NOT EXISTS events_city_idx ON events(city);
+CREATE INDEX IF NOT EXISTS events_is_soldout_idx ON events(is_soldout);
+CREATE INDEX IF NOT EXISTS events_producer_idx ON events(producer);
 CREATE INDEX IF NOT EXISTS prices_event_id_idx ON prices(event_id);
 CREATE INDEX IF NOT EXISTS venues_name_idx ON venues(name);
 CREATE INDEX IF NOT EXISTS venues_city_idx ON venues(city);
@@ -58,16 +78,28 @@ SELECT
   e.id,
   e.name,
   e.date,
+  e.date_end,
   v.name AS venue_name,
-  v.city,
-  v.state,
+  v.city AS venue_city,
+  v.state AS venue_state,
   v.country,
+  e.city,
+  e.state,
   e.image_url,
+  e.location_type,
+  e.start_price,
+  e.price,
+  e.fee,
+  e.batch,
+  e.has_half,
+  e.is_soldout,
+  e.producer,
+  e.share_link,
   MIN(p.price_value) AS min_price,
   MAX(p.price_value) AS max_price,
   p.currency,
   CASE 
-    WHEN e.date < CURRENT_TIMESTAMP THEN 'past'
+    WHEN COALESCE(e.date_end, e.date) < CURRENT_TIMESTAMP THEN 'past'
     ELSE 'upcoming'
   END AS event_status
 FROM events e

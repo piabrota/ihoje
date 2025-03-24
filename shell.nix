@@ -12,6 +12,8 @@ pkgs.mkShell {
     yarn
 
     # Development tools
+    busybox
+    lsof
     git
 
     # Dependencies for Puppeteer (browser automation)

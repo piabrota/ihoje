@@ -14,11 +14,23 @@ async function saveEvent(eventData) {
     const normalizedEvent = {
       name: eventData.name,
       date: eventData.date ? new Date(eventData.date).toISOString() : null,
+      date_end: eventData.date_end ? new Date(eventData.date_end).toISOString() : null,
       venue_id: eventData.venue_id,
       description: eventData.description || '',
       image_url: eventData.image_url || null,
       source: eventData.source || 'manual',
       source_url: eventData.source_url || null,
+      location_type: eventData.location_type || 'onsite',
+      state: eventData.state || null,
+      city: eventData.city || null,
+      start_price: eventData.start_price,
+      price: eventData.price,
+      fee: eventData.fee,
+      batch: eventData.batch || null,
+      has_half: eventData.has_half === true,
+      is_soldout: eventData.is_soldout === true,
+      producer: eventData.producer || null,
+      share_link: eventData.share_link || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -141,9 +153,13 @@ async function updateEvent(id, eventData) {
     // Add update timestamp
     eventData.updated_at = new Date().toISOString();
     
-    // Handle date format if provided
+    // Handle date formats if provided
     if (eventData.date) {
       eventData.date = new Date(eventData.date).toISOString();
+    }
+    
+    if (eventData.date_end) {
+      eventData.date_end = new Date(eventData.date_end).toISOString();
     }
     
     const { data, error } = await supabase
@@ -197,11 +213,15 @@ async function listEvents(options = {}) {
     }
     
     if (fromDate) {
-      query = query.gte('date', new Date(fromDate).toISOString());
+      // For multi-day events, include those that end after the fromDate
+      const fromDateISO = new Date(fromDate).toISOString();
+      query = query.or(`date.gte.${fromDateISO},date_end.gte.${fromDateISO}`);
     }
     
     if (toDate) {
-      query = query.lte('date', new Date(toDate).toISOString());
+      // For multi-day events, include those that start before the toDate
+      const toDateISO = new Date(toDate).toISOString();
+      query = query.or(`date.lte.${toDateISO},date_end.lte.${toDateISO}`);
     }
     
     if (keyword) {

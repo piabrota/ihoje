@@ -94,6 +94,11 @@ LOG_LEVEL=info
 2. Execute the SQL script in `supabase-schema.sql` in the Supabase SQL editor
 3. Create a storage bucket named `event-images`
 4. Update your `.env` file with the Supabase URL and anon key
+5. Populate the database with fake data for testing and frontend development:
+   ```bash
+   npm run seed
+   ```
+   This will create test venues, events, and pricing data with realistic Brazilian location information.
 
 ### 5. Hello World Test for Puppeteer
 
@@ -164,6 +169,32 @@ if (require.main === module) {
 module.exports = testPuppeteer;
 ```
 
+## Database Seeding
+
+The project includes a script to populate the database with fake data for development and testing purposes.
+
+### Running the Seed Script
+
+```bash
+npm run seed
+```
+
+This script will:
+1. Clear any existing data in the Supabase database
+2. Create 20 fake venues with realistic Brazilian addresses
+3. Create 100 fake events with various properties (multi-day events, different location types, etc.)
+4. Add pricing information for each event (full, half, and VIP prices)
+5. Generate random images for the events using picsum.photos
+
+The seeding process helps frontend developers build and test UI components with realistic data structures.
+
+### Configuration
+
+You can modify the seeding parameters in `src/scripts/populate-db.js`:
+- `NUM_VENUES`: Number of venues to create
+- `NUM_EVENTS`: Number of events to create
+- `BATCH_SIZE`: Number of events to process in each batch
+
 ## Available Commands
 
 ### NPM Commands
@@ -186,6 +217,9 @@ npm run lint
 
 # Run manual scraper
 npm run scrape
+
+# Populate database with fake data
+npm run seed
 ```
 
 ### Creating a Dockerfile

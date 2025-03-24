@@ -1,101 +1,103 @@
-# List all available commands
+# Main justfile that loads all commands from submodules
+# Updated format compatible with just version 1.13+
+
+# Load .env file if present
+set dotenv-load
+
+# Show all available recipes by forwarding to master justfile
 default:
-    @just --list
+    @just --justfile justfile.master
 
-# Install dependencies
-install:
-    npm install
+# Build the Rust application
+build:
+    cargo build
 
-# Run development server
-dev:
-    npm run dev
+# Run the application with default settings
+run +ARGS="":
+    cargo run {{ARGS}}
 
-# Run production server
-start:
-    npm start
+# Run the application with a specific city
+run-city city="FL":
+    CITY={{city}} cargo run
 
-# Run tests
-test:
-    npm test
+# Run all tests (shortcut for test all)
+test-all:
+    @just --justfile justfiles/test.justfile all
 
-# Run specific test
-test-one NAME:
-    npm run test -- -t "{{NAME}}"
+# Explicitly define all module commands to forward
+claude:
+    @just --justfile justfiles/claude.justfile claude
 
-# Run linter
-lint:
-    npm run lint
+# Claude with minimal context
+claude-minimal:
+    @just --justfile justfiles/claude.justfile claude-minimal
 
-# Run manual scrape
-scrape:
-    npm run scrape
+# Claude with micro context  
+claude-micro:
+    @just --justfile justfiles/claude.justfile claude-micro
 
-# Build Docker image
-docker-build:
-    docker build -t ihoje:latest .
+# Claude help command
+claude-help:
+    @just --justfile justfiles/claude.justfile help
 
-# Run application in Docker
-docker-run:
-    docker run -p 3000:3000 --env-file .env ihoje:latest
+db *ARGS:
+    @just --justfile justfiles/db.justfile {{ARGS}}
 
-# Run Puppeteer hello world test
-test-puppeteer:
-    node tests/puppeteer-test.js
+mcp *ARGS:
+    @just --justfile justfiles/mcp.justfile {{ARGS}}
 
-# Setup project (copy env file, create directories)
-setup:
-    cp -n .env.example .env || true
-    mkdir -p logs/history images
-    @echo "Setup complete. Don't forget to update your .env file with your Supabase credentials."
+podman *ARGS:
+    @just --justfile justfiles/podman.justfile {{ARGS}}
 
-# Clean log files
-clean-logs:
-    rm -rf logs/*.log logs/history/*.json
+provider *ARGS:
+    @just --justfile justfiles/provider.justfile {{ARGS}}
 
-# Generate example scraper template
-generate-scraper NAME:
-    #!/bin/bash
-    cat > src/scrapers/{{NAME}}.js << 'EOL'
-    const BaseScraper = require('./base');
-    const logger = require('../utils/logger');
-    const { saveEvent, findExistingEvent } = require('../models/event');
-    const { saveVenue, findVenueByName } = require('../models/venue');
-    const { savePrices } = require('../models/price');
+runner *ARGS:
+    @just --justfile justfiles/run.justfile {{ARGS}}
 
-    class {{NAME}}Scraper extends BaseScraper {
-      constructor() {
-        super({
-          name: '{{NAME}}',
-          baseUrl: 'https://example.com',
-        });
-        
-        this.selectors = {
-          eventList: '.event-item',
-          eventLink: 'a.event-link',
-          eventName: '.event-title',
-          eventDate: '.event-date',
-          eventVenue: '.event-venue',
-          eventPrice: '.event-price'
-        };
-      }
-      
-      async scrape() {
-        try {
-          logger.info(`Starting scrape for ${this.name}`);
-          await this.init();
-          
-          // Implement your scraping logic here
-          
-          return [];
-        } catch (error) {
-          logger.error(`Error during scraping: ${error.message}`);
-          throw error;
-        } finally {
-          await this.close();
-        }
-      }
-    }
+security *ARGS:
+    @just --justfile justfiles/security.justfile {{ARGS}}
 
-    module.exports = {{NAME}}Scraper;
-    EOL
-    @echo "Created new scraper: src/scrapers/{{NAME}}.js"
+task *ARGS:
+    @just --justfile justfiles/task.justfile {{ARGS}}
+
+tester *ARGS:
+    @just --justfile justfiles/test.justfile {{ARGS}}
+
+util *ARGS:
+    @just --justfile justfiles/util.justfile {{ARGS}}
+
+hooks *ARGS:
+    @just --justfile justfiles/hooks.justfile {{ARGS}}
+
+# Find and apply justfile best practices
+improve-just:
+    @sh scripts/improve-justfiles.sh
+    
+# Find and apply Rust best practices
+improve-rust:
+    @sh scripts/improve-rust.sh
+    
+# Find and apply Python best practices
+improve-python:
+    @sh scripts/improve-python.sh
+
+# Create improvement plan without execution
+plan-improvement task description:
+    @bash scripts/improvement-plan.sh "{{task}}" "{{description}}"
+
+# Mangekyou Sharingan MCP shortcuts
+mangekyou:
+    @just mcp mangekyou
+
+register-mangekyou:
+    @just mcp register-mangekyou
+
+start-mangekyou:
+    @just mcp start-mangekyou
+    
+test-mangekyou query="Add support for CSV export to the event scraper":
+    @just --justfile justfiles/mcp.justfile test-mangekyou "{{query}}"
+    
+mangekyou-all:
+    @just mcp mangekyou-all
