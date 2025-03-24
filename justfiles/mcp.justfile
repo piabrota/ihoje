@@ -236,11 +236,17 @@ mangekyou-pex:
     #!/usr/bin/env bash
     echo "Building standalone Mangekyou PEX executable..."
     
-    SCRIPT_PATH="${JUSTFILE_DIRECTORY}/../scripts/build_mangekyou_pex.sh"
+    # Use absolute path for reliability
+    SCRIPT_PATH="/home/h0ffmann/Code/ihoje/scripts/build_mangekyou_pex.sh"
     
     if [ ! -f "$SCRIPT_PATH" ]; then
         echo "❌ Build script not found: $SCRIPT_PATH"
-        exit 1
+        # Try alternative path
+        SCRIPT_PATH="$(pwd)/../scripts/build_mangekyou_pex.sh"
+        if [ ! -f "$SCRIPT_PATH" ]; then
+            echo "❌ Could not find build script at alternative location either"
+            exit 1
+        fi
     fi
     
     # Run the build script
@@ -254,12 +260,18 @@ mangekyou-pex-run:
     #!/usr/bin/env bash
     echo "Running Mangekyou standalone PEX..."
     
-    PEX_PATH="${JUSTFILE_DIRECTORY}/../dist/mangekyou.pex"
+    # Use absolute path for reliability
+    PEX_PATH="/home/h0ffmann/Code/ihoje/dist/mangekyou.pex"
     
     if [ ! -f "$PEX_PATH" ]; then
         echo "❌ PEX file not found: $PEX_PATH"
-        echo "Please build it first with: just mcp mangekyou-pex"
-        exit 1
+        # Try alternative path
+        PEX_PATH="$(pwd)/../dist/mangekyou.pex"
+        if [ ! -f "$PEX_PATH" ]; then
+            echo "❌ PEX file not found at alternative location either"
+            echo "Please build it first with: just mcp mangekyou-pex"
+            exit 1
+        fi
     fi
     
     # Run the PEX file
