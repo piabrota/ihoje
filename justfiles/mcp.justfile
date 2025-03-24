@@ -1,8 +1,11 @@
 # MCP Tools Management Recipes
 # This file contains all MCP tool-related commands
 
-# Load .env file if present
+# Load .env file if present and set default MCP command
 set dotenv-load
+
+# Set MCP command with fallback
+MCP_COMMAND := env_var_or_default("MCP_COMMAND", "mcp")
 
 # Show available recipes
 default:
@@ -48,56 +51,57 @@ brave-browser:
     fi
     
     echo "Installing Brave Browser MCP with API key..."
-    BRAVE_API_KEY=$BRAVE_API_KEY claude mcp add brave-browser -s user npx @modelcontextprotocol/server-brave-search
+    BRAVE_API_KEY=$BRAVE_API_KEY $MCP_COMMAND add brave-browser -s user npx @modelcontextprotocol/server-brave-search
 
 # Sequential Thinking
 sequential-thinking:
-    claude mcp add sequential-thinking -s user npx @modelcontextprotocol/server-sequential-thinking
+    $MCP_COMMAND add sequential-thinking -s user npx @modelcontextprotocol/server-sequential-thinking
 
 # Filesystem
 filesystem:
-    claude mcp add filesystem -s user npx @modelcontextprotocol/server-filesystem ~/Documents ~/Desktop ~/Downloads ~/Projects
+    $MCP_COMMAND add filesystem -s user npx @modelcontextprotocol/server-filesystem ~/Documents ~/Desktop ~/Downloads ~/Projects
 
 # Puppeteer
 puppeteer:
-    claude mcp add puppeteer -s user npx @modelcontextprotocol/server-puppeteer
+    $MCP_COMMAND add puppeteer -s user npx @modelcontextprotocol/server-puppeteer
 
 # Web Fetching
 fetch:
-    claude mcp add fetch -s user npx @kazuph/mcp-fetch
+    $MCP_COMMAND add fetch -s user npx @kazuph/mcp-fetch
 
 # Browser Tools
 browser-tools:
     #!/usr/bin/env bash
     echo "Installing Browser Tools MCP with improved connection handling..."
     # Remove existing installation if any
-    claude mcp remove browser-tools 2>/dev/null || true
+    $MCP_COMMAND remove browser-tools 2>/dev/null || true
     # Install with forced stdio communication
-    claude mcp add browser-tools -s user "npx @agentdeskai/browser-tools-mcp"
+    $MCP_COMMAND add browser-tools -s user "npx @agentdeskai/browser-tools-mcp"
 
 # Check MCP tools
 list:
-    claude mcp list
+    $MCP_COMMAND list
 
 # Debug MCP server status
 debug:
-    claude --mcp-debug
+    echo "Debug MCP server status command would run: $MCP_COMMAND --mcp-debug"
+    $MCP_COMMAND list
 
 # Update Model Context Protocol (MCP) tools
 update:
-    claude mcp list
+    $MCP_COMMAND list
 
 # Clean up MCP tool registrations
 clean-mcp tool_name:
     #!/usr/bin/env bash
     echo "Cleaning up MCP tool registration: {{tool_name}}"
     # First add a placeholder to make sure the tool exists in config
-    claude mcp add {{tool_name}} -s user "echo 'Placeholder for {{tool_name}}'" 
+    $MCP_COMMAND add {{tool_name}} -s user "echo 'Placeholder for {{tool_name}}'" 
     # Then try to remove it (ignore errors)
-    claude mcp remove {{tool_name}} 2>/dev/null || true
+    $MCP_COMMAND remove {{tool_name}} 2>/dev/null || true
     # Verify it's gone
     echo "MCP tools after cleanup:"
-    claude mcp list
+    $MCP_COMMAND list
 
 # Install all MCP tools
 install-all:
@@ -132,7 +136,17 @@ install-all:
     install_tool "Puppeteer" "puppeteer"
     install_tool "Fetch" "fetch"
     install_tool "Browser Tools" "browser-tools"
-    install_tool "Mangekyou" "mangekyou"
+    
+    # Setup Mangekyou without directly using Claude
+    echo "Setting up Mangekyou..."
+    SCRIPT_PATH="${JUSTFILE_DIRECTORY}/../scripts/mangekyou.sh"
+    if $SCRIPT_PATH setup && $SCRIPT_PATH start; then
+        echo "✅ Mangekyou installed successfully"
+        ((success_count++))
+    else
+        echo "⚠️ Mangekyou installation had warnings (will still function)"
+        ((failed_count++))
+    fi
     
     # Install Brave Browser if API key exists
     if [ -f .env ]; then
@@ -151,6 +165,10 @@ install-all:
     
     echo -e "\nInstalled MCP tools:"
     just list
+    
+    # Display Mangekyou status
+    echo -e "\nMangekyou Status:"
+    $SCRIPT_PATH status
 
 # Simplified Mangekyou MCP commands
 # All operations are handled by a single unified script
@@ -254,10 +272,10 @@ mangekyou-pex:
     chmod +x "$PLACEHOLDER_SCRIPT"
     
     # Unregister existing service
-    claude mcp remove mangekyou 2>/dev/null || true
+    $MCP_COMMAND remove mangekyou 2>/dev/null || true
     
     # Register the placeholder service
-    claude mcp add mangekyou -s user "$PLACEHOLDER_SCRIPT"
+    $MCP_COMMAND add mangekyou -s user "$PLACEHOLDER_SCRIPT"
     
     echo "✅ Simplified Mangekyou service registered"
     echo "Usage: claude mangekyou <your implementation request>"
