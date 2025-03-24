@@ -31,8 +31,8 @@ help:
     @echo "  just mangekyou-restart    - Restart Mangekyou MCP server"
     @echo ""
     @echo "Standalone Executables:"
-    @echo "  just mangekyou-pex        - Build standalone PEX executable (no venv needed)"
-    @echo "  just mangekyou-pex-run    - Run Mangekyou from standalone PEX"
+    @echo "  just mangekyou-pex        - Create standalone executable (no venv needed)"
+    @echo "  just mangekyou-pex-run    - Run Mangekyou from standalone executable"
 
 # Brave Browser (requires BRAVE_API_KEY in .env)
 brave-browser:
@@ -231,48 +231,55 @@ test-mangekyou query="Add support for CSV export to the event scraper":
         -d "{\"body\": {\"query\": \"{{query}}\"}}"
     echo ""
     
-# Build standalone PEX executable for Mangekyou
+# Create standalone Mangekyou executable
 mangekyou-pex:
     #!/usr/bin/env bash
-    echo "Building standalone Mangekyou PEX executable..."
+    echo "Creating standalone Mangekyou executable..."
     
-    # Use absolute path for reliability
-    SCRIPT_PATH="/home/h0ffmann/Code/ihoje/scripts/build_mangekyou_pex.sh"
+    # Define paths
+    STANDALONE_SCRIPT="/home/h0ffmann/Code/ihoje/scripts/mangekyou_standalone.py"
+    OUTPUT_DIR="/home/h0ffmann/Code/ihoje/dist"
+    OUTPUT_SCRIPT="${OUTPUT_DIR}/mangekyou"
     
-    if [ ! -f "$SCRIPT_PATH" ]; then
-        echo "❌ Build script not found: $SCRIPT_PATH"
+    # Check if script exists
+    if [ ! -f "$STANDALONE_SCRIPT" ]; then
+        echo "❌ Source script not found: $STANDALONE_SCRIPT"
         # Try alternative path
-        SCRIPT_PATH="$(pwd)/../scripts/build_mangekyou_pex.sh"
-        if [ ! -f "$SCRIPT_PATH" ]; then
-            echo "❌ Could not find build script at alternative location either"
+        STANDALONE_SCRIPT="$(pwd)/../scripts/mangekyou_standalone.py"
+        if [ ! -f "$STANDALONE_SCRIPT" ]; then
+            echo "❌ Source script not found at alternative location either"
             exit 1
         fi
     fi
     
-    # Run the build script
-    bash "$SCRIPT_PATH"
+    # Ensure output directory exists
+    mkdir -p "$OUTPUT_DIR"
     
-    echo "✅ Mangekyou PEX built successfully - you can now run it without a venv"
+    # Copy script to output directory
+    cp "$STANDALONE_SCRIPT" "$OUTPUT_SCRIPT"
+    chmod +x "$OUTPUT_SCRIPT"
+    
+    echo "✅ Standalone executable created: $OUTPUT_SCRIPT"
     echo "Usage: just mcp mangekyou-pex-run"
     
-# Run Mangekyou from standalone PEX
+# Run Mangekyou from standalone executable
 mangekyou-pex-run:
     #!/usr/bin/env bash
-    echo "Running Mangekyou standalone PEX..."
+    echo "Running Mangekyou standalone executable..."
     
     # Use absolute path for reliability
-    PEX_PATH="/home/h0ffmann/Code/ihoje/dist/mangekyou.pex"
+    SCRIPT_PATH="/home/h0ffmann/Code/ihoje/dist/mangekyou"
     
-    if [ ! -f "$PEX_PATH" ]; then
-        echo "❌ PEX file not found: $PEX_PATH"
+    if [ ! -f "$SCRIPT_PATH" ]; then
+        echo "❌ Standalone executable not found: $SCRIPT_PATH"
         # Try alternative path
-        PEX_PATH="$(pwd)/../dist/mangekyou.pex"
-        if [ ! -f "$PEX_PATH" ]; then
-            echo "❌ PEX file not found at alternative location either"
+        SCRIPT_PATH="$(pwd)/../dist/mangekyou"
+        if [ ! -f "$SCRIPT_PATH" ]; then
+            echo "❌ Standalone executable not found at alternative location either"
             echo "Please build it first with: just mcp mangekyou-pex"
             exit 1
         fi
     fi
     
-    # Run the PEX file
-    "$PEX_PATH"
+    # Run the standalone script
+    "$SCRIPT_PATH"
