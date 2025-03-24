@@ -29,6 +29,10 @@ help:
     @echo "  just mangekyou-stop       - Stop Mangekyou MCP server"
     @echo "  just mangekyou-status     - Show Mangekyou MCP status"
     @echo "  just mangekyou-restart    - Restart Mangekyou MCP server"
+    @echo ""
+    @echo "Standalone Executables:"
+    @echo "  just mangekyou-pex        - Build standalone PEX executable (no venv needed)"
+    @echo "  just mangekyou-pex-run    - Run Mangekyou from standalone PEX"
 
 # Brave Browser (requires BRAVE_API_KEY in .env)
 brave-browser:
@@ -226,3 +230,37 @@ test-mangekyou query="Add support for CSV export to the event scraper":
         -H "Content-Type: application/json" \
         -d "{\"body\": {\"query\": \"{{query}}\"}}"
     echo ""
+    
+# Build standalone PEX executable for Mangekyou
+mangekyou-pex:
+    #!/usr/bin/env bash
+    echo "Building standalone Mangekyou PEX executable..."
+    
+    SCRIPT_PATH="${JUSTFILE_DIRECTORY}/../scripts/build_mangekyou_pex.sh"
+    
+    if [ ! -f "$SCRIPT_PATH" ]; then
+        echo "❌ Build script not found: $SCRIPT_PATH"
+        exit 1
+    fi
+    
+    # Run the build script
+    bash "$SCRIPT_PATH"
+    
+    echo "✅ Mangekyou PEX built successfully - you can now run it without a venv"
+    echo "Usage: just mcp mangekyou-pex-run"
+    
+# Run Mangekyou from standalone PEX
+mangekyou-pex-run:
+    #!/usr/bin/env bash
+    echo "Running Mangekyou standalone PEX..."
+    
+    PEX_PATH="${JUSTFILE_DIRECTORY}/../dist/mangekyou.pex"
+    
+    if [ ! -f "$PEX_PATH" ]; then
+        echo "❌ PEX file not found: $PEX_PATH"
+        echo "Please build it first with: just mcp mangekyou-pex"
+        exit 1
+    fi
+    
+    # Run the PEX file
+    "$PEX_PATH"

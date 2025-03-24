@@ -101,3 +101,10 @@ mangekyou-restart:
     
 test-mangekyou query="Add support for CSV export to the event scraper":
     @just mcp test-mangekyou "{{query}}"
+    
+# Standalone PEX commands for Mangekyou
+mangekyou-pex:
+    @just mcp mangekyou-pex
+    
+mangekyou-pex-run:
+    @just mcp mangekyou-pex-run
