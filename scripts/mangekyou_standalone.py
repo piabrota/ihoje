@@ -28,9 +28,22 @@ def write_pid():
 def register_with_claude():
     """Register the server with Claude MCP"""
     script_path = os.path.abspath(__file__)
+    
+    # First try to remove any existing registration
+    try:
+        subprocess.run(
+            ["claude", "mcp", "remove", MCP_NAME],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+    except (subprocess.SubprocessError, FileNotFoundError):
+        pass  # Ignore errors when removing
+    
+    # Now add the server as a URL-based MCP server
     try:
         result = subprocess.run(
-            ["claude", "mcp", "add", MCP_NAME, "-s", "user", f"{sys.executable} {script_path}"],
+            ["claude", "mcp", "add", MCP_NAME, "-u", f"http://localhost:{PORT}"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -40,7 +53,21 @@ def register_with_claude():
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to register with Claude MCP: {e.stderr}")
-        return False
+        
+        # Fallback to script registration if URL doesn't work
+        try:
+            result = subprocess.run(
+                ["claude", "mcp", "add", MCP_NAME, "-s", "user", f"{sys.executable} {script_path}"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=True
+            )
+            print(f"✅ Registered with Claude MCP (script fallback): {result.stdout.strip()}")
+            return True
+        except subprocess.CalledProcessError as e2:
+            print(f"❌ Failed with script fallback too: {e2.stderr}")
+            return False
     except FileNotFoundError:
         print("❌ Claude CLI not found. Please install it first.")
         return False
