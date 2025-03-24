@@ -18,3 +18,46 @@ metals.sbt
 .env
 mapbox_access_token.xml
 node_modules
+.clauderc.json
+
+# Provider-specific files (anonymized names)
+*sympla*
+tests/sympla-*.js
+*shotgun*
+scraper_*_prod_*.log
+failures_*.csv
+tests/events-*.html
+
+# Export files
+events_*.csv
+
+# Generated logs
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Go specific
+.go/
+
+# Runtime directories
+.xdg-runtime-dir/
