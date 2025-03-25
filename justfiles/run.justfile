@@ -27,6 +27,10 @@ help:
     @echo "  both [ARGS]          - Run with CSV and PostgreSQL"
     @echo "Provider:"
     @echo "  provider NAME        - Run with specific provider"
+    @echo "Static Mode:"
+    @echo "  download-site URL FOLDER [PROVIDER] - Download site with httrack"
+    @echo "  run-static FOLDER [PROVIDER] [CITY] - Run with static HTML files"
+    @echo "  e2e-static-test [PROVIDER] [CITY]   - Run complete end-to-end test"
 
 # Run app with args
 app +ARGS="":
@@ -79,6 +83,128 @@ provider provider="pikachu":
     [[ "{{provider}}" != "pikachu" && "{{provider}}" != "charmander" ]] && \
       echo "Error: provider must be pikachu or charmander" && exit 1
     PROVIDER={{provider}} cargo run -p sharingan
+    
+# Run with static extraction mode (using local HTML files)
+run-static folder provider="pikachu" city="FL":
+    #!/usr/bin/env bash
+    if [ ! -d "{{folder}}" ]; then
+        echo "Error: Extraction folder '{{folder}}' does not exist"
+        exit 1
+    fi
+    
+    [[ "{{provider}}" != "pikachu" && "{{provider}}" != "charmander" ]] && \
+      echo "Error: provider must be pikachu or charmander" && exit 1
+      
+    # Set up required environment variables for static mode
+    export EXTRACTION_MODE=static
+    export EXTRACTION_FOLDER="{{folder}}"
+    export PROVIDER={{provider}}
+    export CITY={{city}}
+    
+    # Set a dummy API URL since we won't be using FireCrawler
+    if [ "{{provider}}" = "pikachu" ]; then
+        export PIKACHU_API_URL="https://example.com"
+    elif [ "{{provider}}" = "charmander" ]; then
+        export CHARMANDER_API_URL="https://example.com"
+    fi
+    
+    echo "Running in static extraction mode with folder: {{folder}}"
+    echo "Provider: {{provider}} | City: {{city}}"
+    cargo run -p sharingan -- --skip-db-test --export gcp
+    
+# Run httrack to extract website for static mode
+download-site url folder provider="pikachu":
+    #!/usr/bin/env bash
+    if [ -z "$(which httrack)" ]; then
+        echo "Error: httrack is not installed. Please install it with:"
+        echo "  sudo apt-get install httrack    # Debian/Ubuntu"
+        echo "  sudo dnf install httrack        # Fedora"
+        echo "  brew install httrack            # macOS with Homebrew"
+        exit 1
+    fi
+    
+    # Create extraction folder if it doesn't exist
+    mkdir -p "{{folder}}"
+    
+    echo "Downloading website: {{url}} to folder: {{folder}}"
+    httrack "{{url}}" -O "{{folder}}" --disable-security-limits -v
+    
+    echo "Download complete. To use this data, run:"
+    echo "just run-static {{folder}} {{provider}}"
+
+# Create an end-to-end test for static extraction mode
+e2e-static-test provider="pikachu" city="FL":
+    #!/usr/bin/env bash
+    set -e  # Exit on any error
+    
+    # Set test folder
+    TEST_FOLDER="./static_extraction_test"
+    
+    # Set target URL based on provider
+    if [ "{{provider}}" = "pikachu" ]; then
+        TARGET_URL="https://www.sympla.com.br/eventos/florianopolis-sc"
+    elif [ "{{provider}}" = "charmander" ]; then
+        TARGET_URL="https://shotgun.live/pt-br/cities/florianopolis"
+    else
+        echo "Error: provider must be pikachu or charmander"
+        exit 1
+    fi
+    
+    echo "==== Running End-to-End Test for Static Extraction Mode ===="
+    echo "Provider: {{provider}} | City: {{city}}"
+    echo "Target URL: $TARGET_URL"
+    echo ""
+    
+    # Create test directory if it doesn't exist
+    mkdir -p "$TEST_FOLDER"
+
+    # Skip download if folder exists and has content
+    if [ -z "$(ls -A "$TEST_FOLDER" 2>/dev/null)" ]; then
+        # Step 1: Download site with HTTrack
+        echo "Step 1: Downloading website with HTTrack..."
+        if command -v httrack &> /dev/null; then
+            httrack "$TARGET_URL" -O "$TEST_FOLDER" --disable-security-limits -v
+        else
+            echo "Warning: httrack not found, creating sample test files instead"
+            echo "<html><body><h1>Test Event</h1></body></html>" > "$TEST_FOLDER/index.html"
+        fi
+    else
+        echo "Using existing files in $TEST_FOLDER"
+    fi
+    
+    # Step 2: Run the application in static mode
+    echo ""
+    echo "Step 2: Running application with static extraction..."
+    
+    # Set up required environment variables for static mode
+    export EXTRACTION_MODE=static
+    export EXTRACTION_FOLDER="$TEST_FOLDER"
+    export PROVIDER={{provider}}
+    export CITY={{city}}
+    
+    # Set a dummy API URL since we won't be using FireCrawler
+    if [ "{{provider}}" = "pikachu" ]; then
+        export PIKACHU_API_URL="https://example.com"
+    elif [ "{{provider}}" = "charmander" ]; then
+        export CHARMANDER_API_URL="https://example.com"
+    fi
+    
+    # Create a test environment
+    # We'll set a mock bucket name for GCP to avoid the error
+    export GCP_BUCKET_NAME=mock-bucket
+    
+    # Skip database connection check
+    export SKIP_DB=true
+    
+    echo "Running in static extraction mode with folder: $TEST_FOLDER"
+    echo "Provider: {{provider}} | City: {{city}}"
+    # Skip database check and explicitly set export format
+    cargo run -p sharingan -- --skip-db-test --export gcp
+    
+    echo ""
+    echo "==== End-to-End Test Completed ===="
+    echo "Extraction folder: $TEST_FOLDER"
+    echo "To run again with the same data: just run-static $TEST_FOLDER {{provider}} {{city}}"
 
 # Run both frontend and backend
 fullstack:

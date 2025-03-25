@@ -7,6 +7,10 @@ set dotenv-load
 # Default city
 default_city := "FL"
 
+# Direct command for static testing
+static-test:
+    @just -f justfiles/run.justfile e2e-static-test
+
 # Show all recipes
 default:
     @just --list
@@ -45,7 +49,18 @@ help:
     @echo "  tobira-restart       - Restart Shinri no Tobira with latest changes"
     @echo "  tobira-redeploy      - Redeploy both mock and Shinri no Tobira containers"
     @echo "  tobira-setup-docker  - Setup Docker Tobiras with separate ports" 
+    @echo "  tobira-debug-dump    - Dump Tobira debugging information for analysis"
+    @echo "  tobira-debug-wasm    - Collect WebAssembly initialization debugging information"
     @echo "  tobira-help          - Show Tobira (Gate of Truth) commands"
+    @echo ""
+    @echo "Gugu GCP Infrastructure:"
+    @echo "  gugu install         - Install Gugu dependencies"
+    @echo "  gugu gcp-creds       - Generate GCP credentials"
+    @echo "  gugu new STACK       - Create new infrastructure stack"
+    @echo "  gugu preview [STACK] - Preview infrastructure changes"
+    @echo "  gugu up [STACK]      - Deploy infrastructure"
+    @echo "  gugu down [STACK]    - Destroy infrastructure"
+    @echo "  gugu-help            - Show more Gugu commands"
     @echo ""
     @echo "Export Commands:"
     @echo "  run-postgres         - Run with PostgreSQL export"
@@ -56,10 +71,13 @@ help:
     @echo "  db-status            - Check DB status"
     @echo "  db-psql              - Connect to PostgreSQL CLI"
     @echo ""
-    @echo "Task Management:"
-    @echo "  add-task NAME DESC   - Add new task"
-    @echo "  mark-step-complete TASK STEP - Mark step complete"
+    @echo "Task Tracking:"
+    @echo "  task-add NAME DESC   - Add new task"
+    @echo "  task-complete TASK STEP - Mark step complete" 
+    @echo "  task-fail TASK STEP ERR - Mark step failed"
     @echo "  task-show            - Show task progress"
+    @echo "  task-list            - List all tasks"
+    @echo "  task-switch NAME     - Switch to different task"
     @echo ""
     @echo "Dependency Management:"
     @echo "  update-deps          - Update all dependencies to latest versions"
@@ -146,6 +164,11 @@ test:
 # Run tests for specific package
 test-sharingan:
     cargo test -p sharingan
+    
+# Run specialized Rock The Mountain price extraction test
+sharingan-rtm:
+    @echo "🧪 Running Rock The Mountain price extraction test..."
+    @cd sharingan && TEST_HTML=1 cargo test --test rtm_test -- --nocapture
 
 # Run tests for pokeball
 test-pokeball:
@@ -180,24 +203,40 @@ db-help:
     @just --justfile justfiles/db.justfile help
 
 # Add task
-add-task task_name task_description:
-    @just --justfile justfiles/task.justfile add {{task_name}} {{task_description}}
+task-add task_name task_description:
+    @just --justfile justfiles/unified_tracking.justfile task-add {{task_name}} {{task_description}}
 
 # Mark step complete
-mark-step-complete task_name step_description info="":
-    @just --justfile justfiles/task.justfile complete {{task_name}} {{step_description}} {{info}}
+task-complete task_name step_description info="":
+    @just --justfile justfiles/unified_tracking.justfile task-complete {{task_name}} {{step_description}} {{info}}
 
 # Mark step failed
-mark-step-failed task_name step_description error="Failed":
-    @just --justfile justfiles/task.justfile fail {{task_name}} {{step_description}} {{error}}
+task-fail task_name step_description error="Failed":
+    @just --justfile justfiles/unified_tracking.justfile task-fail {{task_name}} {{step_description}} {{error}}
 
 # Show task progress
 task-show:
-    @just --justfile justfiles/task.justfile show
+    @just --justfile justfiles/unified_tracking.justfile task-show
+
+# List all tasks
+task-list:
+    @just --justfile justfiles/unified_tracking.justfile task-list
+
+# Switch to different task
+task-switch task_name:
+    @just --justfile justfiles/unified_tracking.justfile task-switch {{task_name}}
+
+# Archive a completed task
+task-archive task_name:
+    @just --justfile justfiles/unified_tracking.justfile task-archive {{task_name}}
+
+# Reset a task (clear progress)
+task-reset task_name:
+    @just --justfile justfiles/unified_tracking.justfile task-reset {{task_name}}
 
 # Task help
 task-help:
-    @just --justfile justfiles/task.justfile help
+    @just --justfile justfiles/unified_tracking.justfile help
 
 # Update all dependencies
 update-deps:
@@ -364,6 +403,22 @@ security +ARGS:
 # Run specialized command
 util +ARGS:
     @just --justfile justfiles/util.justfile {{ARGS}}
+
+# Run specialized command for Gugu infrastructure
+gugu +ARGS:
+    @just --justfile justfiles/gugu.justfile {{ARGS}}
+
+# Show Gugu commands
+gugu-help:
+    @just --justfile justfiles/gugu.justfile help
+    
+# CI commands
+ci +ARGS:
+    @just --justfile justfiles/ci.justfile {{ARGS}}
+
+# Show CI commands help
+ci-help:
+    @just --justfile justfiles/ci.justfile help
     
 # Clean build artifacts and logs
 clean:
@@ -428,6 +483,14 @@ tobira-restart:
 # Redeploy both Tobira containers
 tobira-redeploy:
     @just --justfile justfiles/tobira.justfile redeploy-tobira
+    
+# Dump Tobira debugging information
+tobira-debug-dump:
+    @just --justfile justfiles/tobira.justfile debug-dump
+    
+# Collect WebAssembly debugging information
+tobira-debug-wasm:
+    @just --justfile justfiles/tobira.justfile debug-wasm
 
 # Setup Docker Tobiras with separate ports
 tobira-setup-docker:
