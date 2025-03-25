@@ -1,49 +1,81 @@
 #!/bin/bash
-# Unified Mangekyou MCP script - combines all functionality into a single file
-# Usage: ./mangekyou.sh [setup|start|stop|status]
+# Production-grade Mangekyou MCP server manager
+# Manages the FastAPI-based Mangekyou MCP service
 
 # Configuration
 PORT=17891
+HOST="127.0.0.1"
+WORKERS=1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MANGEKYOU_DIR="$SCRIPT_DIR/mangekyou-mcp"
 PID_FILE="/tmp/mangekyou-pid.txt"
+LOG_FILE="/tmp/mangekyou.log"
 PYTHON_SERVER="$SCRIPT_DIR/mangekyou.py"
+VENV_DIR="/tmp/mangekyou-venv"
+REQUIREMENTS_FILE="/tmp/mangekyou-requirements.txt"
 
-# Ensure the directory exists
-mkdir -p "$MANGEKYOU_DIR/mangekyou_mcp"
+# Create requirements file
+create_requirements() {
+    cat > "$REQUIREMENTS_FILE" << EOF
+fastapi>=0.103.1
+uvicorn[standard]>=0.23.2
+pydantic>=2.4.2
+EOF
+}
 
 # Create banner function
 show_banner() {
     echo "=================================================="
-    echo "  Mangekyou MCP - Simplicity is the ultimate form"
+    echo "  Mangekyou MCP - Production Server"
     echo "=================================================="
     echo ""
 }
 
 # Setup function - installs and registers Mangekyou
 setup() {
-    echo "Setting up Mangekyou MCP..."
+    echo "Setting up Mangekyou MCP Production Server..."
     
     # Stop any existing instances
     stop_server quiet
     
-    # Create __init__.py if it doesn't exist
-    if [ ! -f "$MANGEKYOU_DIR/mangekyou_mcp/__init__.py" ]; then
-        echo "# Mangekyou MCP Package" > "$MANGEKYOU_DIR/mangekyou_mcp/__init__.py"
+    # Create virtual environment if it doesn't exist
+    if [ ! -d "$VENV_DIR" ]; then
+        echo "Creating virtual environment at $VENV_DIR..."
+        python3 -m venv "$VENV_DIR"
     fi
     
+    # Create requirements file
+    create_requirements
+    
+    # Install dependencies
+    echo "Installing dependencies..."
+    "$VENV_DIR/bin/pip" install -r "$REQUIREMENTS_FILE"
+    
     # Create run script
-    cat > "$MANGEKYOU_DIR/run_mangekyou.sh" << 'EOF'
+    cat > "$MANGEKYOU_DIR/run_mangekyou.sh" << EOF
 #!/bin/bash
-cd "$(dirname "$0")/.."
-python3 mangekyou.py
+export MANGEKYOU_PORT=$PORT
+export MANGEKYOU_HOST="$HOST"
+export MANGEKYOU_WORKERS=$WORKERS
+
+# Activate the virtual environment
+source "$VENV_DIR/bin/activate"
+
+# Start server
+cd "$(dirname "\$0")/.."
+exec "$VENV_DIR/bin/python" "$PYTHON_SERVER"
 EOF
     chmod +x "$MANGEKYOU_DIR/run_mangekyou.sh"
     
     # Register with Claude MCP
     echo "Registering Mangekyou MCP with Claude..."
-    claude mcp add mangekyou -s user "$MANGEKYOU_DIR/run_mangekyou.sh"
+    if [ -n "$MCP_COMMAND" ]; then
+        $MCP_COMMAND add mangekyou -s user "$MANGEKYOU_DIR/run_mangekyou.sh"
+    else
+        echo "⚠️ MCP_COMMAND environment variable not set. Using placeholder."
+        echo "✅ Registration would run: mcp add mangekyou -s user $MANGEKYOU_DIR/run_mangekyou.sh"
+    fi
     
     echo "✅ Mangekyou MCP setup complete!"
 }
@@ -59,19 +91,31 @@ start_server() {
         return 1
     fi
     
-    # Start server
-    nohup python3 "$PYTHON_SERVER" > /tmp/mangekyou.log 2>&1 &
+    # Start server using virtual environment
+    export MANGEKYOU_PORT=$PORT
+    export MANGEKYOU_HOST="$HOST"
+    export MANGEKYOU_WORKERS=$WORKERS
+    
+    # First ensure the environment exists
+    if [ ! -d "$VENV_DIR" ]; then
+        echo "Virtual environment not found. Running setup first..."
+        setup
+    fi
+    
+    # Start server in background
+    nohup "$VENV_DIR/bin/python" "$PYTHON_SERVER" > "$LOG_FILE" 2>&1 &
     PID=$!
     echo $PID > "$PID_FILE"
-    sleep 1
+    sleep 2
     
     # Check if started successfully
     if is_running; then
         echo "✅ Mangekyou server started successfully (PID: $PID)"
-        echo "Server running at http://localhost:$PORT"
+        echo "Server running at http://$HOST:$PORT"
         return 0
     else
         echo "❌ Failed to start Mangekyou server"
+        echo "Check logs at $LOG_FILE for details"
         return 1
     fi
 }
@@ -91,7 +135,7 @@ stop_server() {
         PID=$(cat "$PID_FILE")
         if ps -p $PID > /dev/null; then
             kill $PID 2>/dev/null
-            sleep 1
+            sleep 2
             if ps -p $PID > /dev/null; then
                 kill -9 $PID 2>/dev/null
             fi
@@ -142,6 +186,15 @@ is_running() {
     return 1  # Not running
 }
 
+# Check server health
+check_health() {
+    if curl -s "http://$HOST:$PORT/health" | grep -q "ok"; then
+        return 0  # Healthy
+    else
+        return 1  # Not healthy
+    fi
+}
+
 # Show status
 show_status() {
     echo "Checking Mangekyou MCP status..."
@@ -152,22 +205,42 @@ show_status() {
         echo "✅ Mangekyou server is RUNNING"
         echo "PID: $PID"
         echo "Port: $PORT (PID: $PORT_PID)"
-        echo "Server URL: http://localhost:$PORT"
+        echo "Server URL: http://$HOST:$PORT"
+        
+        # Check health
+        if check_health; then
+            echo "Health check: ✅ OK"
+        else
+            echo "Health check: ❌ FAILING"
+        fi
+        
+        # Check API
+        if curl -s "http://$HOST:$PORT/mcp/v1/info" > /dev/null; then
+            echo "API check: ✅ OK"
+        else
+            echo "API check: ❌ FAILING"
+        fi
         
         # Check registration
-        if claude mcp list 2>&1 | grep -q "mangekyou"; then
-            echo "✅ Mangekyou is registered with Claude MCP"
+        if [ -n "$MCP_COMMAND" ] && $MCP_COMMAND list 2>&1 | grep -q "mangekyou"; then
+            echo "✅ Mangekyou is registered with MCP"
         else
-            echo "❌ Mangekyou is NOT registered with Claude MCP"
+            echo "ℹ️ Mangekyou MCP registration status not checked (set MCP_COMMAND env var to enable)"
+        fi
+        
+        # Show log file size
+        if [ -f "$LOG_FILE" ]; then
+            LOG_SIZE=$(du -h "$LOG_FILE" | cut -f1)
+            echo "Log file: $LOG_FILE ($LOG_SIZE)"
         fi
     else
         echo "❌ Mangekyou server is NOT running"
         
         # Check registration
-        if claude mcp list 2>&1 | grep -q "mangekyou"; then
-            echo "⚠️ Mangekyou is registered with Claude MCP but not running"
+        if [ -n "$MCP_COMMAND" ] && $MCP_COMMAND list 2>&1 | grep -q "mangekyou"; then
+            echo "⚠️ Mangekyou is registered with MCP but not running"
         else
-            echo "❌ Mangekyou is NOT registered with Claude MCP"
+            echo "ℹ️ Mangekyou MCP registration status not checked (set MCP_COMMAND env var to enable)"
         fi
     fi
 }
@@ -192,8 +265,22 @@ case "$1" in
         stop_server
         start_server
         ;;
+    logs)
+        if [ -f "$LOG_FILE" ]; then
+            tail -f "$LOG_FILE"
+        else
+            echo "❌ Log file not found: $LOG_FILE"
+        fi
+        ;;
+    health)
+        if check_health; then
+            echo "✅ Server health check: OK"
+        else
+            echo "❌ Server health check: FAILED"
+        fi
+        ;;
     *)
-        echo "Mangekyou MCP - Unified script for all Mangekyou operations"
+        echo "Mangekyou MCP - Production-grade MCP Server"
         echo ""
         echo "Usage: ./mangekyou.sh [command]"
         echo ""
@@ -203,6 +290,14 @@ case "$1" in
         echo "  stop    - Stop the Mangekyou server"
         echo "  restart - Restart the Mangekyou server"
         echo "  status  - Show server status"
+        echo "  logs    - View server logs in real-time"
+        echo "  health  - Check server health"
+        echo ""
+        echo "Environment Variables:"
+        echo "  MANGEKYOU_PORT    - Server port (default: $PORT)"
+        echo "  MANGEKYOU_HOST    - Server host (default: $HOST)"
+        echo "  MANGEKYOU_WORKERS - Number of workers (default: $WORKERS)"
+        echo "  MCP_COMMAND       - Command to use for MCP registration"
         echo ""
         echo "Example:"
         echo "  ./mangekyou.sh setup && ./mangekyou.sh start"

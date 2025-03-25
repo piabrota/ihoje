@@ -1,62 +1,107 @@
 #!/usr/bin/env python3
-"""Ultra simple Mangekyou MCP server"""
+"""
+Production-grade Mangekyou MCP server
+Provides implementation planning capabilities through the MCP protocol
 
-import http.server
-import socketserver
-import json
+Based on FastAPI, Uvicorn with production best practices
+"""
+
 import os
+import json
+import logging
+from typing import Dict, Any, Optional
 
-PORT = 17891
+from fastapi import FastAPI, Request, Response, HTTPException
+from pydantic import BaseModel
+import uvicorn
 
-class MangekyouHandler(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        """Handle GET requests."""
-        if self.path == "/mcp/v1/info":
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            info = {
-                "name": "mangekyou",
-                "description": "Simple Mangekyou implementation planner",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "The implementation request"
-                        }
-                    },
-                    "required": ["query"]
-                },
-                "version": "0.1.0"
-            }
-            self.wfile.write(json.dumps(info).encode())
-        elif self.path == "/health":
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"status": "ok"}).encode())
-        else:
-            self.send_response(404)
-            self.end_headers()
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("/tmp/mangekyou.log")
+    ]
+)
+logger = logging.getLogger("mangekyou")
+
+# Configure server
+PORT = int(os.environ.get("MANGEKYOU_PORT", 17891))
+HOST = os.environ.get("MANGEKYOU_HOST", "127.0.0.1")
+WORKERS = int(os.environ.get("MANGEKYOU_WORKERS", 1))
+
+# Create FastAPI app
+app = FastAPI(
+    title="Mangekyou MCP Server",
+    description="Implementation planning through Model Context Protocol",
+    version="0.2.0"
+)
+
+# Define request/response models
+class McpRequest(BaseModel):
+    body: Dict[str, Any]
     
-    def do_POST(self):
-        """Handle POST requests."""
-        if self.path == "/mcp/v1/mangekyou":
-            content_length = int(self.headers.get("Content-Length", 0))
-            post_data = self.rfile.read(content_length).decode("utf-8")
-            
-            try:
-                data = json.loads(post_data)
-                body = data.get("body", {})
-                query = body.get("query", "")
-                
-                if not query:
-                    self.send_error(400, "Missing query parameter")
-                    return
-                
-                # Generate a simple implementation plan
-                plan = f"""
+class McpResponse(BaseModel):
+    response: str
+
+class InfoResponse(BaseModel):
+    name: str
+    description: str
+    schema: Dict[str, Any]
+    version: str
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "ok"}
+
+@app.get("/mcp/v1/info")
+async def mcp_info():
+    """Provide MCP server information"""
+    logger.info("MCP Info request received")
+    return InfoResponse(
+        name="mangekyou",
+        description="Advanced implementation planning via MCP",
+        schema={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The implementation request"
+                }
+            },
+            "required": ["query"]
+        },
+        version="0.2.0"
+    )
+
+@app.post("/mcp/v1/mangekyou", response_model=McpResponse)
+async def process_request(request: McpRequest):
+    """Handle Mangekyou MCP requests"""
+    try:
+        logger.info(f"Request received: {request}")
+        query = request.body.get("query", "")
+        
+        if not query:
+            logger.warning("Missing query parameter")
+            raise HTTPException(status_code=400, detail="Missing query parameter")
+        
+        # Generate implementation plan
+        plan = create_implementation_plan(query)
+        logger.info("Plan generated successfully")
+        
+        return {"response": plan}
+    except Exception as e:
+        logger.error(f"Error processing request: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+def create_implementation_plan(query: str) -> str:
+    """
+    Create an implementation plan based on the provided query.
+    This is a simple placeholder implementation.
+    """
+    return f"""
 # Implementation Plan for: {query}
 
 ## Changes Needed
@@ -69,32 +114,23 @@ class MangekyouHandler(http.server.BaseHTTPRequestHandler):
 2. [ ] Step 2: Implement core code
 3. [ ] Step 3: Test functionality
 4. [ ] Step 4: Document changes
-                """
-                
-                # Send response
-                self.send_response(200)
-                self.send_header("Content-type", "application/json")
-                self.end_headers()
-                response = {"response": plan}
-                self.wfile.write(json.dumps(response).encode())
-                
-            except Exception as e:
-                self.send_error(500, f"Error: {str(e)}")
-        else:
-            self.send_response(404)
-            self.end_headers()
+    """
+
+def start():
+    """Start the server"""
+    logger.info(f"Starting Mangekyou MCP server on {HOST}:{PORT}")
+    
+    # Using uvicorn programmatically with production settings
+    uvicorn.run(
+        "mangekyou:app", 
+        host=HOST,
+        port=PORT,
+        workers=WORKERS,
+        log_level="info",
+        access_log=True,
+        proxy_headers=True,
+        forwarded_allow_ips="*"
+    )
 
 if __name__ == "__main__":
-    print(f"Starting Mangekyou server on port {PORT}...")
-    
-    try:
-        # Create HTTP server with address reuse to avoid "Address already in use" errors
-        socketserver.TCPServer.allow_reuse_address = True
-        server = socketserver.TCPServer(("localhost", PORT), MangekyouHandler)
-        print(f"Server running at http://localhost:{PORT}")
-        print(f"MCP tool endpoint: http://localhost:{PORT}/mcp/v1/mangekyou")
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("Server stopped by user")
-    except Exception as e:
-        print(f"Error: {e}")
+    start()

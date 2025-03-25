@@ -1,0 +1,10 @@
+# Proper MIME type for WebAssembly files
+AddType application/wasm .wasm
+
+# Fallback for SPA routing
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.html$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]

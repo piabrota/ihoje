@@ -1,10 +1,19 @@
-name: Rust CI
+name: Rust CI Master
 
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'sharingan/**'
+      - 'tobira/**'
+      - 'gugu/**'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - 'sharingan/**'
+      - 'tobira/**'
+      - 'gugu/**'
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -40,3 +49,17 @@ jobs:
       run: |
         cargo install cargo-outdated
         cargo outdated --exit-code 1
+  
+  workflow-overview:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check component-specific workflows
+        run: |
+          echo "Main workflow passed!"
+          echo "Component-specific workflows:"
+          echo "- Sharingan: .github/workflows/sharingan-ci.yml"
+          echo "- Tobira: .github/workflows/tobira-ci.yml"
+          echo "- Gugu: .github/workflows/gugu-ci.yml"
+          echo ""
+          echo "These workflows run independently when their respective components change."

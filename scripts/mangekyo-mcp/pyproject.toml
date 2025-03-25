@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mangekyo-mcp"
+version = "0.1.0"
+authors = [
+  { name = "Claude AI", email = "noreply@anthropic.com" },
+]
+description = "Mangekyo MCP - Implementation Planning Tool for Claude"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn>=0.27.1",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+mangekyo-mcp = "mangekyo_mcp.server:main"
+
+[project.urls]
+"Homepage" = "https://github.com/yourusername/mangekyo-mcp"
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <style>
+    .title { font: bold 40px sans-serif; fill: #fff; }
+    .subtitle { font: 24px sans-serif; fill: #ddd; }
+    .japanese { font: bold 32px sans-serif; fill: #f5f5f5; }
+    .gate-doors { stroke: #555; stroke-width: 4; }
+    .gate-design { stroke: #fff; stroke-width: 2; fill: none; }
+    .eye { fill: #fc0; stroke: #000; stroke-width: 1; }
+    .eye-pupil { fill: #000; }
+    .eye-highlight { fill: #fff; }
+    .gate-handle { fill: #888; stroke: #555; stroke-width: 2; }
+    .shadow { fill: rgba(0,0,0,0.3); }
+  </style>
+  
+  <!-- Background -->
+  <rect width="800" height="400" fill="#300a24" />
+  
+  <!-- Title -->
+  <text x="400" y="60" text-anchor="middle" class="title">Shinri no Tobira</text>
+  <text x="400" y="95" text-anchor="middle" class="subtitle">Gate of Truth - iHoje WebAssembly Interface</text>
+  <text x="400" y="350" text-anchor="middle" class="japanese">真理の扉</text>
+  
+  <!-- Gate of Truth -->
+  <g transform="translate(400, 200)">
+    <!-- Gate Shadow -->
+    <ellipse cx="0" cy="120" rx="160" ry="30" class="shadow" />
+    
+    <!-- Left Door -->
+    <rect x="-150" y="-100" width="140" height="200" rx="5" fill="#222" class="gate-doors" />
+    
+    <!-- Right Door -->
+    <rect x="10" y="-100" width="140" height="200" rx="5" fill="#222" class="gate-doors" />
+    
+    <!-- Door Designs - Alchemical Circles -->
+    <circle cx="-80" cy="0" r="50" class="gate-design" />
+    <circle cx="80" cy="0" r="50" class="gate-design" />
+    
+    <!-- Inner circles & alchemical patterns -->
+    <circle cx="-80" cy="0" r="40" class="gate-design" />
+    <circle cx="80" cy="0" r="40" class="gate-design" />
+    
+    <!-- Triangle patterns -->
+    <polygon points="-80,30 -110,-15 -50,-15" fill="none" stroke="#fff" stroke-width="1.5" />
+    <polygon points="80,30 110,-15 50,-15" fill="none" stroke="#fff" stroke-width="1.5" />
+    
+    <!-- Central Eye -->
+    <circle cx="0" cy="0" r="30" class="eye" />
+    <circle cx="0" cy="0" r="14" class="eye-pupil" />
+    <circle cx="-5" cy="-5" r="5" class="eye-highlight" />
+    
+    <!-- Door handles -->
+    <circle cx="-25" cy="0" r="10" class="gate-handle" />
+    <circle cx="25" cy="0" r="10" class="gate-handle" />
+    
+    <!-- Additional alchemical symbols -->
+    <path d="M-125,-75 L-125,-50 L-100,-50 L-100,-75 Z" class="gate-design" />
+    <path d="M85,-75 L85,-50 L110,-50 L110,-75 Z" class="gate-design" />
+    <path d="M-125,75 L-125,50 L-100,50 L-100,75 Z" class="gate-design" />
+    <path d="M85,75 L85,50 L110,50 L110,75 Z" class="gate-design" />
+  </g>
+</svg>

@@ -1,0 +1,26 @@
+🔄 Redeploying both frontend containers...
+Starting both frontends in separate containers...
+71b51ad33c7c   ihoje-frontend:simple   "python -m http.serv…"   3 minutes ago    Exited (137) 8 seconds ago              ihoje-mock
+ihoje-mock
+ihoje-mock
+🏗️ Building and starting mock frontend on port 8080...
+60801d691132352f4de1b771443790127576485986571129cf8618dae6d68b85
+🏗️ Building WebAssembly frontend on port 8081 (mock only if this fails)...
+Note: The WebAssembly build may fail if there are compilation errors.
+The mock frontend will still be available on port 8080.
+⚠️ WebAssembly frontend build failed, only mock is available.
+✨ Both frontends started!
+📱 Mock frontend available at: http://localhost:8080
+📱 WebAssembly frontend available at: http://localhost:8081
+
+📊 Container status:
+60801d691132   ihoje-frontend:simple   "python -m http.serv…"   7 seconds ago   Up 6 seconds   0.0.0.0:8080->8080/tcp, :::8080->8080/tcp   ihoje-mock
+
+📝 To view logs: 
+  - Mock frontend: docker logs ihoje-mock
+  - WebAssembly frontend: docker logs ihoje-wasm
+🛑 To stop containers: 
+  - docker stop ihoje-mock ihoje-wasm
+✅ Both frontend containers have been redeployed!
+📱 Mock frontend: http://localhost:8080
+🧩 WebAssembly frontend: http://localhost:8081

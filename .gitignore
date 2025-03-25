@@ -1,40 +1,13 @@
-target/
+### Rust ###
+/target/
+*/target/
+*/*/target/
 output/
+Cargo.lock
+!Cargo.lock
 
-.settings
-.project
-.classpath
-
-.idea
-*.iml
-
-.vscode
-
-.bsp
-.metals
-.bloop
-metals.sbt
-
-.env
-mapbox_access_token.xml
-node_modules
-.clauderc.json
-
-# Provider-specific files (anonymized names)
-*sympla*
-tests/sympla-*.js
-*shotgun*
-scraper_*_prod_*.log
-failures_*.csv
-tests/events-*.html
-
-# Export files
-events_*.csv
-
-# Generated logs
-*.log
-
-# Python
+### Python ###
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -55,9 +28,123 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+pythonenv*
+
+### Scala ###
+.bsp/
+.metals/
+.bloop/
+metals.sbt
+.scala-build/
+.gugu/
+
+### IDE ###
+# VS Code
+.vscode/
+.history/
+
+# JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.settings/
+.project
+.classpath
+
+### Logs and Databases ###
+*.log
+*.sqlite
+*.db
+db.sqlite3
+
+### Environment ###
+.env
+.env.local
+.env.*.local
+.env.test
+.env.production
+
+### Node.js ###
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+!package-lock.json
+!yarn.lock
+.npm/
+.pnp/
+.pnp.js
+
+### MCP Tools ###
+.claude-mcp-config.json
+.clauderc.json
+.mcp-registration/
+
+### Project specific ###
+# Provider-specific files (anonymized names)
+*sympla*
+tests/sympla-*.js
+*shotgun*
+scraper_*_prod_*.log
+failures_*.csv
+tests/events-*.html
+events_*.csv
+mapbox_access_token.xml
+
+# Secret management
+justfiles/secrets.justfile
+
+# Generated documentation
+docs/api/
 
 # Go specific
 .go/
 
 # Runtime directories
 .xdg-runtime-dir/
+
+### Binary files ###
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.wasm
+*.exe
+*.dll
+*.so
+*.dylib
+*.jar
+*.war
+*.ear
+*.class
+
+### Large files ###
+*.csv
+*.json
+!package.json
+!.github/**/*.json
+!gugu/src/**/*.json
+!tobira/src/**/*.json
+*.parquet
+*.db
+*.sqlite
+*.db-shm
+*.db-wal

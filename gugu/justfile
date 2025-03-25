@@ -1,0 +1,75 @@
+# Gugu: GCP Infrastructure Management with Scala 3 and Pulumi
+# 
+# This justfile provides commands for managing GCP infrastructure using 
+# the Gugu toolkit built on Scala 3, scala-cli, and Pulumi.
+# 
+# Named after the strongest character from "To Your Eternity" anime.
+
+# Default command shows help
+default:
+    @just --list
+
+# Install all required dependencies
+gugu-install:
+    @echo "🏗️  Installing Gugu dependencies..."
+    @mkdir -p .gugu
+    @command -v scala-cli >/dev/null 2>&1 || { echo "Installing scala-cli..."; curl -sSLf https://scala-cli.virtuslab.org/get | sh; }
+    @command -v pulumi >/dev/null 2>&1 || { echo "Installing Pulumi..."; curl -fsSL https://get.pulumi.com | sh; }
+    @echo "📦 Installing Scala dependencies..."
+    @scala-cli setup-ide .
+    @scala-cli compile .
+    @echo "✅ Dependencies installed successfully!"
+
+# Create a new Pulumi stack
+gugu-new stack="dev":
+    @echo "🌱 Creating new Gugu stack: {{stack}}..."
+    @mkdir -p .gugu/stacks/{{stack}}
+    @pulumi stack init {{stack}}
+    @echo "✅ Stack {{stack}} created successfully!"
+
+# Preview infrastructure changes without applying
+gugu-preview stack="dev":
+    @echo "🔍 Previewing changes for stack {{stack}}..."
+    @pulumi preview --stack {{stack}}
+
+# Deploy infrastructure
+gugu-up stack="dev":
+    @echo "🚀 Deploying infrastructure for stack {{stack}}..."
+    @scala-cli run --main-class dev.gugu.Main .
+    @pulumi up --stack {{stack}} --yes
+    @echo "✅ Infrastructure deployed successfully!"
+
+# Destroy infrastructure
+gugu-down stack="dev":
+    @echo "💥 Destroying infrastructure for stack {{stack}}..."
+    @pulumi destroy --stack {{stack}} --yes
+    @echo "✅ Infrastructure destroyed successfully!"
+
+# Sync with current GCP state 
+gugu-sync stack="dev":
+    @echo "🔄 Syncing with current GCP state for stack {{stack}}..."
+    @pulumi refresh --stack {{stack}} --yes
+    @echo "✅ Infrastructure state synchronized!"
+
+# Check system dependencies
+gugu-check-deps:
+    @echo "🔍 Checking Gugu dependencies..."
+    @command -v scala-cli >/dev/null 2>&1 || { echo "❌ scala-cli not found"; exit 1; }
+    @command -v pulumi >/dev/null 2>&1 || { echo "❌ Pulumi not found"; exit 1; }
+    @command -v gcloud >/dev/null 2>&1 || { echo "❌ Google Cloud SDK not found"; exit 1; }
+    @echo "✅ All dependencies are installed!"
+    @echo "📊 Versions:"
+    @echo "Scala CLI: $(scala-cli version)"
+    @echo "Pulumi: $(pulumi version)"
+    @echo "Google Cloud SDK: $(gcloud --version | head -n 1)"
+
+# Generate credential file for GCP
+gugu-gcp-creds output_file=".gugu/gcp-credentials.json":
+    @echo "🔑 Generating GCP credentials..."
+    @gcloud auth application-default login
+    @cp "$(gcloud info --format='value(config.paths.global_config_dir)')/application_default_credentials.json" "{{output_file}}"
+    @echo "✅ Credentials saved to {{output_file}}"
+
+# Wrapper for all gugu commands
+gugu command *args:
+    @just gugu-{{command}} {{args}}

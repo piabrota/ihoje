@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https: data:; connect-src 'self' https://api.ihoje.app https://*.supabase.co https://*.supabase.in;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy" content="accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()">
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Discover events in your city with iHoje - your source for concerts, festivals, and more">
+    <title>iHoje - All Events in One Place</title>
+    
+    <!-- Environment Configuration (will be injected by build process) -->
+    <script src="/env.js"></script>
+    
+    <!-- Auth debugging helpers -->
+    <script src="/auth-debug.js"></script>
+    
+    <!-- WebAssembly MIME Type Fix -->
+    <script>
+        // Ensure WebAssembly files are loaded with correct MIME type
+        if (!window.WebAssembly || !window.WebAssembly.compile) {
+            console.error('WebAssembly is not supported in this browser');
+        } else {
+            const originalInstantiate = WebAssembly.instantiate;
+            WebAssembly.instantiate = function(bufferSource, importObject) {
+                if (bufferSource instanceof Response) {
+                    return bufferSource.arrayBuffer()
+                        .then(buffer => originalInstantiate(buffer, importObject));
+                }
+                return originalInstantiate(bufferSource, importObject);
+            };
+        }
+    </script>
+    
+    <!-- GitHub Pages SPA Routing Fix -->
+    <script>
+        // Check if we're redirected from 404.html with a stored route
+        (function() {
+            const storedRoute = sessionStorage.getItem('spa_route');
+            if (storedRoute) {
+                // Clear storage
+                sessionStorage.removeItem('spa_route');
+                
+                // Construct new URL
+                const targetUrl = window.location.origin + '/' + storedRoute;
+                
+                // Update history to avoid another redirect
+                window.history.replaceState(null, '', targetUrl);
+            }
+        })();
+    </script>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎟️</text></svg>">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/styles.css">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app" class="app-loading">
+        <div class="loading-spinner"></div>
+        <p>Loading iHoje events...</p>
+    </div>
+</body>
+</html>

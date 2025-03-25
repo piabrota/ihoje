@@ -1,0 +1,75 @@
+#!/bin/bash
+# Pre-commit hook to check for provider name leaks
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+echo "Running provider leak check..."
+
+# List of provider names to check for (case insensitive)
+PROVIDER_NAMES=("sympla" "shotgun" "www.sympla.com" "sympla.com.br" "shotgun.live")
+
+# Files to exclude from checking
+EXCLUDE=(
+  ".env"          # Actual environment variables file
+  "CLAUDE_CACHE.md"  # Claude cache file
+  ".github/hooks/pre-commit"  # This script
+  "*.log"         # Log files
+  "*.csv"         # Data export files
+)
+
+# Build exclude pattern for grep
+EXCLUDE_PATTERN=""
+for pattern in "${EXCLUDE[@]}"; do
+  EXCLUDE_PATTERN="$EXCLUDE_PATTERN --exclude=$pattern"
+done
+
+# Check for provider names in repository
+FOUND_LEAKS=0
+
+for name in "${PROVIDER_NAMES[@]}"; do
+  echo -e "${YELLOW}Checking for '$name' references...${NC}"
+  
+  # Use grep to find references, excluding specified files
+  RESULTS=$(grep -r -i "$name" $EXCLUDE_PATTERN --include="*.rs" --include="*.md" \
+    --include="*.toml" --include="*.json" --include="*.js" --include="*.yml" \
+    --include="Dockerfile*" . || true)
+  
+  if [ -n "$RESULTS" ]; then
+    echo -e "${RED}Found '$name' references in the following files:${NC}"
+    echo "$RESULTS"
+    FOUND_LEAKS=1
+  else
+    echo -e "${GREEN}No '$name' references found.${NC}"
+  fi
+done
+
+# Check .env.example specifically
+echo -e "${YELLOW}Checking .env.example for provider URLs...${NC}"
+ENV_EXAMPLE_LEAKS=$(grep -i -E "http[s]?://(www\.)?[a-zA-Z0-9-]+\.(com|org|net)" .env.example || true)
+
+if [ -n "$ENV_EXAMPLE_LEAKS" ]; then
+  echo -e "${RED}Found URL(s) in .env.example:${NC}"
+  echo "$ENV_EXAMPLE_LEAKS"
+  if [[ "$ENV_EXAMPLE_LEAKS" != *"example.com"* ]]; then
+    FOUND_LEAKS=1
+  else
+    echo -e "${GREEN}URL appears to be a placeholder (example.com). This is OK.${NC}"
+  fi
+else
+  echo -e "${GREEN}No URLs found in .env.example.${NC}"
+fi
+
+# Final result
+if [ $FOUND_LEAKS -eq 1 ]; then
+  echo -e "${RED}❌ Provider name leaks detected! Please fix before committing.${NC}"
+  echo "Tip: Use codenames (Pikachu, Charmander) instead of actual provider names."
+  echo "     Only .env should contain actual provider URLs (not versioned)."
+  exit 1
+else
+  echo -e "${GREEN}✅ No provider name leaks detected.${NC}"
+  exit 0
+fi

@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iHoje - Eventos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=places&loading=async"></script>
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2c3e50;
+      --accent-color: #e74c3c;
+      --light-color: #ecf0f1;
+      --dark-color: #34495e;
+      --success-color: #27ae60;
+      --price-color: #16a085;
+      --free-color: #2ecc71;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    header {
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 15px 0;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo h1 {
+      font-size: 24px;
+      margin-left: 10px;
+    }
+    
+    .logo-icon {
+      font-size: 28px;
+      color: var(--accent-color);
+    }
+    
+    nav ul {
+      display: flex;
+      list-style: none;
+    }
+    
+    nav ul li {
+      margin-left: 20px;
+    }
+    
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    nav ul li a:hover {
+      color: var(--accent-color);
+    }
+    
+    .main-content {
+      margin-top: 30px;
+    }
+    
+    .page-title {
+      font-size: 28px;
+      color: var(--secondary-color);
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 10px;
+    }
+    
+    .filter-bar {
+      background-color: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+    }
+    
+    .filter-input {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .filter-input input, .filter-input select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .filter-checkbox {
+      display: flex;
+      align-items: center;
+    }
+    
+    .filter-checkbox input {
+      margin-right: 5px;
+    }
+    
+    .filter-button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .filter-button:hover {
+      background-color: #2980b9;
+    }
+    
+    .events-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    
+    .event-card {
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .event-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+    
+    .event-image {
+      height: 200px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .event-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+    
+    .event-card:hover .event-image img {
+      transform: scale(1.05);
+    }
+    
+    .event-date-badge {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background-color: var(--accent-color);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .event-content {
+      padding: 20px;
+    }
+    
+    .event-title {
+      font-size: 18px;
+      color: var(--secondary-color);
+      margin-bottom: 10px;
+    }
+    
+    .event-location {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      color: var(--dark-color);
+      font-size: 14px;
+    }
+    
+    .event-location i {
+      margin-right: 5px;
+      color: var(--primary-color);
+    }
+    
+    .event-price {
+      font-weight: bold;
+      color: var(--price-color);
+    }
+    
+    .event-free {
+      color: var(--free-color);
+    }
+    
+    .event-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #f8f9fa;
+      border-top: 1px solid #eee;
+    }
+    
+    .details-button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+    
+    .details-button:hover {
+      background-color: #2980b9;
+    }
+    
+    .favorite-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #ccc;
+      font-size: 16px;
+      transition: color 0.3s;
+    }
+    
+    .favorite-button:hover, .favorite-button.active {
+      color: var(--accent-color);
+    }
+    
+    /* Event Detail Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      overflow: auto;
+    }
+    
+    .modal-content {
+      background-color: white;
+      margin: 50px auto;
+      width: 90%;
+      max-width: 900px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 24px;
+      color: white;
+      z-index: 10;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.5);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-header {
+      height: 300px;
+      position: relative;
+    }
+    
+    .modal-header img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .modal-title {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+      color: white;
+      padding: 20px;
+    }
+    
+    .modal-title h2 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+    
+    .modal-body {
+      padding: 20px;
+    }
+    
+    .event-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .info-group {
+      margin-bottom: 15px;
+    }
+    
+    .info-label {
+      color: var(--secondary-color);
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .info-value {
+      color: var(--dark-color);
+    }
+    
+    .event-description {
+      margin-bottom: 20px;
+      color: var(--dark-color);
+      line-height: 1.5;
+    }
+    
+    #map {
+      height: 300px;
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .modal-footer {
+      padding: 15px 20px;
+      background-color: #f8f9fa;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .event-link {
+      background-color: var(--primary-color);
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      transition: background-color 0.3s;
+    }
+    
+    .event-link i {
+      margin-right: 5px;
+    }
+    
+    .event-link:hover {
+      background-color: #2980b9;
+    }
+    
+    footer {
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 30px 0;
+      margin-top: 50px;
+    }
+    
+    .footer-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 30px;
+    }
+    
+    .footer-section h3 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--primary-color);
+      display: inline-block;
+    }
+    
+    .footer-section p {
+      margin-bottom: 10px;
+      line-height: 1.5;
+      color: #bdc3c7;
+    }
+    
+    .footer-section a {
+      color: #bdc3c7;
+      text-decoration: none;
+      display: block;
+      margin-bottom: 8px;
+      transition: color 0.3s;
+    }
+    
+    .footer-section a:hover {
+      color: var(--primary-color);
+    }
+    
+    .footer-copyright {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #bdc3c7;
+      font-size: 14px;
+    }
+    
+    @media (max-width: 768px) {
+      .events-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .event-info {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-content">
+      <div class="logo">
+        <span class="logo-icon">🎟️</span>
+        <h1>iHoje</h1>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#"><i class="fas fa-home"></i> Início</a></li>
+          <li><a href="#"><i class="fas fa-calendar-alt"></i> Eventos</a></li>
+          <li><a href="#"><i class="fas fa-info-circle"></i> Sobre</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  
+  <div class="container main-content">
+    <h1 class="page-title">Eventos Disponíveis</h1>
+    
+    <div class="filter-bar">
+      <div class="filter-input">
+        <input type="text" placeholder="Buscar eventos..." id="search-input">
+      </div>
+      <div class="filter-input">
+        <select id="city-filter">
+          <option value="">Todas as cidades</option>
+          <option value="Rio de Janeiro">Rio de Janeiro</option>
+          <option value="São Paulo">São Paulo</option>
+          <option value="Ribeirão Preto">Ribeirão Preto</option>
+        </select>
+      </div>
+      <div class="filter-checkbox">
+        <input type="checkbox" id="free-only">
+        <label for="free-only">Somente eventos gratuitos</label>
+      </div>
+      <button class="filter-button" id="apply-filters">Aplicar Filtros</button>
+    </div>
+    
+    <div class="events-container" id="events-list">
+      <!-- Event cards are dynamically added here -->
+    </div>
+  </div>
+  
+  <!-- Event Detail Modal -->
+  <div class="modal" id="event-modal">
+    <div class="modal-content">
+      <span class="close-modal" id="close-modal">&times;</span>
+      <div class="modal-header">
+        <img id="modal-image" src="" alt="Event Image">
+        <div class="modal-title">
+          <h2 id="modal-event-title"></h2>
+          <p id="modal-event-date"></p>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="event-info">
+          <div>
+            <div class="info-group">
+              <div class="info-label">Local:</div>
+              <div class="info-value" id="modal-location"></div>
+            </div>
+            <div class="info-group">
+              <div class="info-label">Cidade:</div>
+              <div class="info-value" id="modal-city"></div>
+            </div>
+            <div class="info-group">
+              <div class="info-label">Preço:</div>
+              <div class="info-value" id="modal-price"></div>
+            </div>
+          </div>
+          <div>
+            <div class="info-group">
+              <div class="info-label">Descrição:</div>
+              <div class="info-value event-description" id="modal-description"></div>
+            </div>
+          </div>
+        </div>
+        <div id="map"></div>
+      </div>
+      <div class="modal-footer">
+        <a href="#" class="event-link" id="modal-url" target="_blank">
+          <i class="fas fa-external-link-alt"></i> Visitar Site Oficial
+        </a>
+        <button class="favorite-button" id="modal-favorite">
+          <i class="fas fa-heart"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>iHoje</h3>
+          <p>Sua fonte para eventos e shows locais em uma só plataforma.</p>
+        </div>
+        <div class="footer-section">
+          <h3>Links</h3>
+          <a href="#">Início</a>
+          <a href="#">Eventos</a>
+          <a href="#">Sobre</a>
+        </div>
+        <div class="footer-section">
+          <h3>Contato</h3>
+          <p>contato@ihoje.com</p>
+          <p>+55 11 9999-9999</p>
+        </div>
+      </div>
+      <div class="footer-copyright">
+        © 2025 iHoje - Todos os direitos reservados
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mock event data
+    const events = [
+      {
+        id: "1001",
+        name: "Rock in Rio 2025",
+        description: "O maior festival de música da América Latina retorna com estrelas globais em vários palcos. Experiências inesquecíveis e performances musicais de classe mundial por 10 dias de pura diversão.",
+        date: "12-21 de Setembro, 2025",
+        location: "Parque Olímpico, Rio de Janeiro",
+        city: "Rio de Janeiro",
+        price: "R$350,00",
+        isFree: false,
+        url: "https://rockinrio.com",
+        imageUrl: "/static/images/event1.svg",
+        coordinates: {
+          lat: -22.9757,
+          lng: -43.3929
+        }
+      },
+      {
+        id: "1002",
+        name: "Lollapalooza Brazil 2025",
+        description: "Três dias de música, arte e experiências culturais com artistas internacionais e locais. Um dos festivais mais esperados do ano com atrações para todos os gostos.",
+        date: "28-30 de Março, 2025",
+        location: "Autódromo de Interlagos, São Paulo",
+        city: "São Paulo",
+        price: "R$800,00",
+        isFree: false,
+        url: "https://www.lollapaloozabr.com",
+        imageUrl: "/static/images/event2.svg",
+        coordinates: {
+          lat: -23.7036,
+          lng: -46.6997
+        }
+      },
+      {
+        id: "1003",
+        name: "João Rock 2025",
+        description: "Um dos festivais de rock mais importantes do Brasil apresentando o melhor do rock brasileiro. Uma celebração da música nacional com palcos simultâneos e grandes nomes do cenário musical.",
+        date: "14 de Junho, 2025",
+        location: "Parque Permanente de Exposições, Ribeirão Preto",
+        city: "Ribeirão Preto",
+        price: "R$280,00",
+        isFree: false,
+        url: "https://joaorock.com.br",
+        imageUrl: "/static/images/event3.svg",
+        coordinates: {
+          lat: -21.1767,
+          lng: -47.8208
+        }
+      },
+      {
+        id: "1004",
+        name: "MITA Festival 2025",
+        description: "Um festival de vários dias celebrando música, inovação, arte e sustentabilidade. Reúne grandes nomes da música brasileira e internacional em um ambiente descontraído e sofisticado.",
+        date: "17-18 de Maio, 2025",
+        location: "Jockey Club, Rio de Janeiro",
+        city: "Rio de Janeiro",
+        price: "R$450,00",
+        isFree: false,
+        url: "https://mitafestival.com.br",
+        imageUrl: "/static/images/event4.svg",
+        coordinates: {
+          lat: -22.9696,
+          lng: -43.2170
+        }
+      },
+      {
+        id: "1005",
+        name: "Free Jazz Festival",
+        description: "Uma celebração da música jazz com artistas internacionais e brasileiros em um belo ambiente ao ar livre. Música de qualidade em um dos cenários mais bonitos do Rio de Janeiro, com vista para a baía.",
+        date: "8-10 de Agosto, 2025",
+        location: "Marina da Glória, Rio de Janeiro",
+        city: "Rio de Janeiro",
+        price: "Gratuito",
+        isFree: true,
+        url: "https://freejazzfestival.com.br",
+        imageUrl: "/static/images/event1.svg",
+        coordinates: {
+          lat: -22.9197,
+          lng: -43.1711
+        }
+      }
+    ];
+
+    // Variables
+    let map;
+    let currentMarker;
+    let filteredEvents = [...events];
+    
+    // DOM Elements
+    const eventsList = document.getElementById('events-list');
+    const modal = document.getElementById('event-modal');
+    const closeModal = document.getElementById('close-modal');
+    const searchInput = document.getElementById('search-input');
+    const cityFilter = document.getElementById('city-filter');
+    const freeOnlyCheckbox = document.getElementById('free-only');
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    
+    // Initialize the application
+    function init() {
+      renderEvents(events);
+      initMap();
+      setupEventListeners();
+    }
+    
+    // Render event cards
+    function renderEvents(eventsToRender) {
+      eventsList.innerHTML = '';
+      
+      if (eventsToRender.length === 0) {
+        eventsList.innerHTML = '<p class="no-events">Nenhum evento encontrado com os filtros selecionados.</p>';
+        return;
+      }
+      
+      eventsToRender.forEach(event => {
+        const card = document.createElement('div');
+        card.className = 'event-card';
+        card.dataset.id = event.id;
+        
+        card.innerHTML = `
+          <div class="event-image">
+            <img src="${event.imageUrl}" alt="${event.name}">
+            <div class="event-date-badge">${event.date}</div>
+          </div>
+          <div class="event-content">
+            <h2 class="event-title">${event.name}</h2>
+            <p class="event-location"><i class="fas fa-map-marker-alt"></i> ${event.location}</p>
+            <p class="${event.isFree ? 'event-price event-free' : 'event-price'}">${event.price}</p>
+          </div>
+          <div class="event-footer">
+            <button class="details-button" data-id="${event.id}">Ver Detalhes</button>
+            <button class="favorite-button" data-id="${event.id}"><i class="fas fa-heart"></i></button>
+          </div>
+        `;
+        
+        eventsList.appendChild(card);
+      });
+    }
+    
+    // Initialize Google Map
+    function initMap() {
+      // Center the map on Brazil
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: -15.7801, lng: -47.9292 },
+        zoom: 5
+      });
+    }
+    
+    // Show event details in modal
+    function showEventDetails(eventId) {
+      const event = events.find(e => e.id === eventId);
+      if (!event) return;
+      
+      // Set modal content
+      document.getElementById('modal-image').src = event.imageUrl;
+      document.getElementById('modal-event-title').textContent = event.name;
+      document.getElementById('modal-event-date').textContent = event.date;
+      document.getElementById('modal-location').textContent = event.location;
+      document.getElementById('modal-city').textContent = event.city;
+      document.getElementById('modal-price').textContent = event.price;
+      document.getElementById('modal-description').textContent = event.description;
+      document.getElementById('modal-url').href = event.url;
+      
+      // Show the modal
+      modal.style.display = 'block';
+      
+      // Center map on event location
+      map.setCenter(event.coordinates);
+      map.setZoom(15);
+      
+      // Add marker for event location
+      if (currentMarker) {
+        currentMarker.setMap(null);
+      }
+      
+      currentMarker = new google.maps.Marker({
+        position: event.coordinates,
+        map: map,
+        title: event.name
+      });
+    }
+    
+    // Apply filters
+    function applyFilters() {
+      const searchText = searchInput.value.toLowerCase();
+      const cityValue = cityFilter.value;
+      const freeOnly = freeOnlyCheckbox.checked;
+      
+      filteredEvents = events.filter(event => {
+        // Text search
+        const matchesSearch = 
+          event.name.toLowerCase().includes(searchText) || 
+          event.description.toLowerCase().includes(searchText) ||
+          event.location.toLowerCase().includes(searchText);
+        
+        // City filter
+        const matchesCity = cityValue === '' || event.city === cityValue;
+        
+        // Free only filter
+        const matchesFree = !freeOnly || event.isFree;
+        
+        return matchesSearch && matchesCity && matchesFree;
+      });
+      
+      renderEvents(filteredEvents);
+    }
+    
+    // Setup event listeners
+    function setupEventListeners() {
+      // Close modal
+      closeModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+      
+      // Close modal when clicking outside
+      window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+      
+      // Show event details
+      document.addEventListener('click', (e) => {
+        if (e.target.matches('.details-button') || e.target.closest('.details-button')) {
+          const button = e.target.matches('.details-button') ? e.target : e.target.closest('.details-button');
+          const eventId = button.dataset.id;
+          showEventDetails(eventId);
+        }
+      });
+      
+      // Toggle favorite
+      document.addEventListener('click', (e) => {
+        if (e.target.matches('.favorite-button') || e.target.closest('.favorite-button')) {
+          const button = e.target.matches('.favorite-button') ? e.target : e.target.closest('.favorite-button');
+          button.classList.toggle('active');
+        }
+      });
+      
+      // Apply filters
+      applyFiltersBtn.addEventListener('click', applyFilters);
+      
+      // Apply filters on Enter key in search input
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          applyFilters();
+        }
+      });
+    }
+    
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

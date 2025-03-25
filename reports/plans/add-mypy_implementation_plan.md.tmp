@@ -1,0 +1,66 @@
+╭────────────────────────────────────────────╮
+│ ✻ Welcome to Claude Code research preview! │
+│                                            │
+│   /help for help                           │
+│                                            │
+│   cwd: /home/h0ffmann/Code/ihoje           │
+│                                            │
+│   Found 8 MCP servers (use /mcp for status)│
+╰────────────────────────────────────────────╯
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ >                                                                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ? for shortcuts
+
+
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G
+  ERROR  setRawMode EIO
+
+ node:tty:81:24
+
+ - ReadStream.setRawMode (node:tty:81:24)
+ -handleSetRawM (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-
+  ode          ai/claude-code/cli.js:767:169)
+ - (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-cod
+  e/cli.js:775:2000)
+ -sz (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-c
+    ode/cli.js:81:21381)
+ -dX (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-c
+    ode/cli.js:81:40838)
+ -pk (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-c
+    ode/cli.js:81:34924)
+ -cZ (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-c
+    ode/cli.js:79:4819)
+ -_8 (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-c
+    ode/cli.js:81:32239)
+ -I.G.updateConta (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropi
+  ner            c-ai/claude-code/cli.js:85:1835)
+ -on.rende (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/cl
+          aude-code/cli.js:772:428)
+
+
+  ERROR  setRawMode EIO
+
+ node:tty:81:24
+
+ - ReadStream.setRawMode (node:tty:81:24)
+ -handleSetRawM (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-
+  ode          ai/claude-code/cli.js:767:169)
+ - (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-cod
+  e/cli.js:775:2000)
+ -sz (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-c
+    ode/cli.js:81:21381)
+ -dX (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-c
+    ode/cli.js:81:40838)
+ -pk (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-c
+    ode/cli.js:81:34924)
+ -cZ (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-c
+    ode/cli.js:79:4819)
+ -_8 (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/claude-c
+    ode/cli.js:81:32239)
+ -I.G.updateConta (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropi
+  ner            c-ai/claude-code/cli.js:85:1835)
+ -on.rende (file:///home/h0ffmann/.npm-global/lib/node_modules/@anthropic-ai/cl
+          aude-code/cli.js:772:428)
+

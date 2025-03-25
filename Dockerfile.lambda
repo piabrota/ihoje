@@ -1,0 +1,46 @@
+FROM public.ecr.aws/lambda/provided:al2 as builder
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.84
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+WORKDIR /usr/src/app
+
+# Install additional build dependencies
+RUN yum install -y openssl-devel
+
+# Copy Cargo.toml and Cargo.lock
+COPY Cargo.toml ./
+
+# Create bootstrap source for Lambda runtime
+RUN mkdir -p src
+COPY src/ ./src/
+
+# Add Lambda bootstrap wrapper
+COPY lambda-bootstrap.rs ./src/
+RUN cargo new lambda-bootstrap
+COPY lambda-bootstrap.toml ./lambda-bootstrap/Cargo.toml
+
+# Build the Lambda bootstrap wrapper
+WORKDIR /usr/src/app/lambda-bootstrap
+RUN cargo build --release
+
+# Build the application
+WORKDIR /usr/src/app
+RUN cargo build --release
+
+# Final image
+FROM public.ecr.aws/lambda/provided:al2
+
+# Create app directory
+WORKDIR ${LAMBDA_RUNTIME_DIR}
+
+# Copy Lambda bootstrap runtime and application binary
+COPY --from=builder /usr/src/app/lambda-bootstrap/target/release/bootstrap ${LAMBDA_RUNTIME_DIR}/bootstrap
+COPY --from=builder /usr/src/app/target/release/rust-scraper ${LAMBDA_RUNTIME_DIR}/rust-scraper
+
+# Make bootstrap executable
+RUN chmod +x ${LAMBDA_RUNTIME_DIR}/bootstrap
+
+# Command that Lambda will run
+CMD ["lambda_handler"]

@@ -1,0 +1,47 @@
+[build]
+# Build command for Wasm target
+target = "index.html"
+release = false
+dist = "dist"
+public_url = "/"
+
+# Add wasm-opt to optimize the wasm binary
+[[hooks]]
+stage = "post_build"
+command = "cp"
+command_arguments = ["-r", "src/static", "dist/static"]
+
+# Copy server config files
+[[hooks]]
+stage = "post_build"
+command = "sh"
+command_arguments = ["-c", "[ -f server-configs/.htaccess ] && cp server-configs/.htaccess dist/ || touch dist/.htaccess"]
+
+[[hooks]]
+stage = "post_build"
+command = "sh"
+command_arguments = ["-c", "[ -f server-configs/nginx.conf ] && cp server-configs/nginx.conf dist/ || touch dist/nginx.conf"]
+
+# Copy env.js with WebAssembly MIME type fix
+[[hooks]]
+stage = "post_build"
+command = "cp"
+command_arguments = ["env.js", "dist/env.js"]
+
+# Add proper MIME types if server configs don't exist
+[[hooks]]
+stage = "post_build"
+command = "sh"
+command_arguments = ["-c", "grep -q 'application/wasm' dist/.htaccess || echo 'AddType application/wasm .wasm' >> dist/.htaccess"]
+
+[watch]
+watch = ["src", "index.html", "Cargo.toml", "server-configs", "env.js"]
+
+[serve]
+address = "127.0.0.1"
+port = 8080
+open = false
+
+# Custom MIME types for the development server
+[serve.headers]
+"*.wasm" = { "Content-Type" = "application/wasm" }
