@@ -1,0 +1,101 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install dependencies and utilities
+RUN apt-get update && \
+    apt-get install -y curl net-tools netcat-openbsd procps iproute2 iputils-ping && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create necessary directories
+RUN mkdir -p /app/dist/static/images /app/logs /app/dist/auth
+
+# Copy static assets
+COPY src/static /app/dist/static
+
+# Generate placeholder SVGs for development
+RUN for i in {1..4}; do \
+    echo "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"450\" viewBox=\"0 0 800 450\"><rect width=\"800\" height=\"450\" fill=\"#7000ff\" /><text x=\"400\" y=\"225\" font-family=\"Arial\" font-size=\"48\" text-anchor=\"middle\" fill=\"white\">Shinri no Tobira $i</text></svg>" > "/app/dist/static/images/event$i.svg"; \
+done
+
+# Create a simplified mock index.html
+RUN echo '<!DOCTYPE html>\n\
+<html lang="en">\n\
+<head>\n\
+    <meta charset="UTF-8">\n\
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n\
+    <title>iHoje - Development Mode</title>\n\
+    <style>\n\
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }\n\
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }\n\
+        .event { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }\n\
+        .event img { max-width: 100%; height: auto; }\n\
+        h1 { color: #7000ff; }\n\
+        .status { position: fixed; top: 10px; right: 10px; background: #333; color: white; padding: 5px 10px; border-radius: 3px; }\n\
+    </style>\n\
+</head>\n\
+<body>\n\
+    <div class="status">DEV MODE</div>\n\
+    <div class="container">\n\
+        <h1>Shinri no Tobira - Development</h1>\n\
+        <p>This is a simplified development version running on port 8080.</p>\n\
+        <div id="events">\n\
+            <div class="event">\n\
+                <h2>Event 1</h2>\n\
+                <img src="/static/images/event1.svg" alt="Event 1" />\n\
+                <p>Sample event description.</p>\n\
+            </div>\n\
+            <div class="event">\n\
+                <h2>Event 2</h2>\n\
+                <img src="/static/images/event2.svg" alt="Event 2" />\n\
+                <p>Sample event description.</p>\n\
+            </div>\n\
+        </div>\n\
+    </div>\n\
+    <script>\n\
+        // Log that we are in development mode\n\
+        console.log("Development mode active - Mock data version");\n\
+        \n\
+        // Mock admin user for testing\n\
+        const mockAdmin = {\n\
+            id: "test-admin-id-123",\n\
+            email: "admin@test.com",\n\
+            name: "Test Admin",\n\
+            role: "admin",\n\
+            avatar_url: "https://ui-avatars.com/api/?name=Test+Admin&background=0D8ABC&color=fff",\n\
+            access_token: "mock-token-123"\n\
+        };\n\
+        \n\
+        // Set admin user in localStorage\n\
+        localStorage.setItem("ihoje_auth", JSON.stringify(mockAdmin));\n\
+        console.log("Admin user configured:", mockAdmin);\n\
+    </script>\n\
+</body>\n\
+</html>' > /app/dist/index.html
+
+# Copy server script
+COPY spa_server.py /app/
+
+# Create a health check script
+RUN echo '#!/bin/bash\n\
+response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health)\n\
+if [ "$response" = "200" ]; then\n\
+    exit 0\n\
+else\n\
+    echo "Health check failed with status: $response"\n\
+    exit 1\n\
+fi' > /app/health-check.sh && chmod +x /app/health-check.sh
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV TOBIRA_ENV=development
+ENV TOBIRA_MOCK_DATA=true
+
+EXPOSE 8080
+
+# Use the health check
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
+  CMD ["./health-check.sh"]
+
+# Run the server
+CMD ["python", "spa_server.py", "8080", "/app/dist"]

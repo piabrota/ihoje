@@ -44,8 +44,25 @@
         console.error('Error parsing auth state:', e);
         return null;
       }
+    },
+    // For development testing - set a dummy admin user
+    setMockAdmin: function() {
+      const mockAdmin = {
+        id: "test-admin-id-123",
+        email: "admin@test.com",
+        name: "Test Admin",
+        role: "admin",
+        avatar_url: "https://ui-avatars.com/api/?name=Test+Admin&background=0D8ABC&color=fff",
+        access_token: "mock-token-123"
+      };
+      localStorage.setItem('ihoje_auth', JSON.stringify(mockAdmin));
+      console.log('Mock admin user set in localStorage');
+      // Redirect to admin dashboard
+      if (confirm('Mock admin set. Go to admin dashboard?')) {
+        window.location.href = '/admin';
+      }
     }
   };
   
-  console.log('Auth debugging helpers initialized');
+  console.log('Auth debugging helpers initialized - Use window.debugAuth.setMockAdmin() to create a mock admin user');
 })();

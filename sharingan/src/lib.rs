@@ -25,18 +25,18 @@ See the `main.rs` file for the binary implementation that uses this library.
 
 // Re-export modules for integration testing
 pub mod config;
+pub mod db;
 pub mod event;
 pub mod exporter;
+pub mod exporters;
 pub mod logger;
+pub mod providers;
 pub mod rate_limiter;
 pub mod sharingan;
-pub mod db;
-pub mod exporters;
-pub mod providers;
 
 // Re-export common types
-pub use config::{AppConfig, get_config};
-pub use event::{EventData, FailedPriceFetch};
+pub use config::{get_config, AppConfig};
 pub use db::{EventStore, ExportFormat};
+pub use event::{EventData, FailedPriceFetch};
 pub use exporters::Exporter;
-pub use providers::{EventProvider, Provider, get_provider};
+pub use providers::{get_provider, EventProvider, Provider};

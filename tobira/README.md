@@ -1,138 +1,237 @@
-# Tobira (Gate of Truth) - iHoje WebAssembly Interface
+# Shinri no Tobira (Gate of Truth)
 
-![Shinri no Tobira](https://i.pinimg.com/originals/24/72/1b/24721b17f758cd1e2dc3621d6d9b7814.jpg)
-
-## 真理の扉 (Shinri no Tobira)
-
-In Fullmetal Alchemist, the Gate of Truth (真理の扉, Shinri no Tobira) is a metaphysical gateway that contains all the knowledge of the universe. Similarly, this module serves as the gateway between users and the world of events, providing a portal to access the knowledge contained within our database.
+WebAssembly frontend for the iHoje event system.
 
 ## Overview
 
-Tobira is a modern Rust WebAssembly interface for the iHoje event platform. It serves as the gateway (tobira) between users and the knowledge (shinri) contained in our event database, providing a seamless and responsive experience.
+Shinri no Tobira (Gate of Truth) is the WebAssembly frontend for the iHoje event system, named after the gate from Fullmetal Alchemist. It's built with Rust and the Yew framework, compiled to WebAssembly for client-side rendering.
 
-### Features
+## Quick Start
 
-- **Alchemical Transformation**: Pure Rust code transmuted into WebAssembly
-- **Universal Knowledge**: Complete event information, filtering, and details
-- **Equivalent Exchange**: Clean, intuitive user interface for accessing data
-- **Truth Visualization**: Responsive design for all device sizes
-- **Transmutation Circle**: Built on the Yew framework's reactive components
-
-## Project Structure
-
-```
-tobira/
-├── src/
-│   ├── api/         - Knowledge transmission protocols
-│   ├── components/  - Elemental building blocks
-│   ├── models/      - Alchemical formulas (data structures)
-│   ├── pages/       - Complete transmutation circles
-│   ├── static/      - Philosopher's stones (static assets)
-│   ├── utils/       - Alchemical tools and utilities
-│   ├── app.rs       - The primary transmutation circle
-│   ├── lib.rs       - Core alchemical principles
-│   └── router.rs    - Pathways between realms
-├── index.html       - The initial gateway
-├── Cargo.toml       - Material components
-└── build.sh         - Transmutation activator
-```
-
-## Shinri no Tobira (The Real Thing)
-
-The shinri-no-tobira Docker image is the true implementation of the Gateway, connecting to real event data rather than mock information. Like the Gate of Truth in Fullmetal Alchemist, it provides access to the real knowledge of events, not mere imitations.
+To get started with the frontend:
 
 ```bash
-# Build the real Shinri no Tobira image
-docker build -t shinri-no-tobira:latest -f tobira/Dockerfile .
+# Build and run the frontend with WebAssembly support
+cd fix-scripts
+./launch-tobira.sh
 
-# Run the true Gate of Truth
-docker run -p 8081:8081 shinri-no-tobira:latest
+# OR for just building without running the server
+./build-frontend.sh
 ```
+
+## Troubleshooting WebAssembly Issues
+
+We've created automated scripts to simplify WebAssembly debugging:
+
+1. **Fix all WebAssembly issues at once**:
+   ```bash
+   # Apply all fixes and create backups
+   ./fix-wasm-frontend.sh
+   
+   # Restart only the WebAssembly container
+   ./restart-wasm-tobira.sh
+   ```
+
+2. **Check what's wrong with WebAssembly loading**:
+   ```bash
+   # Run automated diagnostics
+   ./debug-wasm.sh
+   ```
+
+3. **Common issues automatically fixed**:
+   - MIME type problems - files are now served with `application/wasm`
+   - File name mismatches - code maps between filenames automatically
+   - Supabase SRI integrity failures - removed integrity check
+   - WebAssembly initialization errors - enhanced error handling
+   
+For more detailed debugging information, see [DEBUG.md](DEBUG.md)
+
+## Running with Docker
+
+We've created improved scripts for Docker deployment:
+
+```bash
+# Run both containers (Mock on 8080, WebAssembly on 8081)
+./run-both-tobiras.sh
+
+# Run only the WebAssembly version with all fixes
+./fix-wasm-frontend.sh && ./restart-wasm-tobira.sh
+
+# Check container status and diagnose issues
+./check-tobiras.sh
+./debug-wasm.sh
+
+# Docker Compose alternative (more configurable)
+./run-tobiras-docker-compose.sh
+```
+
+The WebAssembly version runs on port 8081: http://localhost:8081
 
 ## Development
 
-### Prerequisites
+When developing the frontend:
 
-- Rust 1.84+ (The Philosopher's Stone)
-- wasm-pack (The Transmutation Circle)
-- trunk (The Alchemical Apparatus)
+1. Make changes to the Rust code in the `src/` directory
+2. Run `./fix-scripts/build-frontend.sh` to rebuild
+3. Start the server with `python3 fixed_server.py 8081 dist`
 
-### Setup
+## Mock Data Mode
 
-1. Install wasm-pack:
-   ```
-   cargo install wasm-pack
-   ```
+For development without a backend, use mock data mode:
 
-2. Install trunk for development:
-   ```
-   cargo install trunk
-   ```
+1. The mock data is enabled by default in the env.js configuration
+2. The WebAssembly initialization code calls `wasm.enable_mock_data()`
+3. Sample events are defined in `src/utils/mock_data.rs`
 
-### Opening the Gate
+## Technical Architecture
 
-To build and open the Gate of Truth:
+The frontend is built with:
 
-```bash
-# Using just
-just tobira-build
+- **Rust + Yew**: For component-based UI development
+- **wasm-bindgen**: For WebAssembly/JavaScript interoperability
+- **WebAssembly**: For running Rust code in the browser
+- **SPA Architecture**: Single Page Application with client-side routing
 
-# Or directly
-cd tobira
-./build.sh
+### Technology Stack Relationship
+
+```mermaid
+graph TD
+    User([User]) --> Browser[Browser]
+    Browser -->|HTTP Request| Docker[Docker Container]
+    Docker --> |Serves Static Files| SPA[SPA Server<br/>Python/spa_server.py]
+    
+    subgraph "Docker Container"
+        SPA --> |Serves| HTML[index.html]
+        SPA --> |Serves| JS[JavaScript Files]
+        SPA --> |Serves| WASM[WebAssembly Binary<br/>ihoje-tobira_bg.wasm]
+        SPA --> |Serves| Assets[Static Assets<br/>CSS/Images]
+        HTML --> |Loads| Bootstrap[bootstrap.js]
+        HTML --> |Loads| EnvJS[env.js<br/>Configuration]
+        Bootstrap --> |Initializes| WASM
+        EnvJS --> |Configures| WASM
+    end
+    
+    subgraph "Rust Compilation Flow"
+        RustCode[Rust Source Code] --> |Compiles to| WasmTarget[WebAssembly Target]
+        WasmTarget --> |Produces| WASM
+    end
+    
+    Browser --> |Loads| FrontendApp[Frontend Application]
+    FrontendApp --> |Renders| HomePage[Home Page<br/>event_list.rs]
+    FrontendApp --> |Renders| LoginPage[Login Page<br/>login_page.rs]
+    FrontendApp --> |Renders| AdminPage[Admin Pages<br/>admin/*.rs]
+    
+    FrontendApp --> |Uses| Router[Router<br/>router.rs]
+    Router --> |Routes to| HomePage
+    Router --> |Routes to| LoginPage
+    Router --> |Routes to| AdminPage
+    Router --> |Routes to| EventDetail[Event Detail Page]
+    
+    AdminPage --> |Requires| Auth[Authentication<br/>auth_context.rs]
+    LoginPage --> |Manages| Auth
+    
+    subgraph "Data Flow"
+        WASM --> |API Calls| BackendAPI[Backend API]
+        WASM --> |Fallback| MockData[Mock Data<br/>mock_data.rs]
+    end
+    
+    style Docker fill:#ddf,stroke:#aac,stroke-width:2px
+    style WASM fill:#fdd,stroke:#c99,stroke-width:2px
+    style RustCode fill:#dfd,stroke:#9c9,stroke-width:2px
+    style FrontendApp fill:#ffd,stroke:#cc9,stroke-width:2px
+    style Auth fill:#dff,stroke:#9cc,stroke-width:2px
 ```
 
-### Development Server (Docker-only)
+### Critical Components
 
-Start a development server with auto-reload (using Docker):
+1. **Docker Container**: Isolates and packages the application for consistent deployment
+2. **Python SPA Server**: Handles HTTP requests and serves static files with correct MIME types
+3. **WebAssembly Binary**: Compiled Rust code that runs in the browser
+4. **Rust Frontend Code**: Component-based UI built with the Yew framework
+5. **Authentication Flow**: Manages user sessions and admin access
+6. **Router**: Handles client-side navigation between pages
 
-```bash
-# Using just
-just tobira-dev
+## Deployment
 
-# Or with Docker directly
-cd tobira
-docker build -t shinri-no-tobira:dev -f Dockerfile --target dev .
-docker run -p 8080:8081 --name ihoje-tobira shinri-no-tobira:dev
-```
+### Local Deployment
 
-### Mock Knowledge (Testing Mode with Docker)
+For local production deployment:
 
-For development without accessing the true knowledge (backend), you can use mock data mode:
+1. Set `IHOJE_ENVIRONMENT=production` for stricter CSP headers
+2. Build with `wasm-pack build --target web --release`
+3. Use the Docker container for consistent deployment
 
-```bash
-# Using just
-just tobira-dev-mock
+### GCP Deployment
 
-# Or with Docker directly
-cd tobira
-docker build -t shinri-no-tobira:mock -f Dockerfile --target mock .
-docker run -p 8080:8081 --name ihoje-mock shinri-no-tobira:mock
-```
+For deploying to Google Cloud Platform:
 
-Mock data mode generates imitation knowledge (fake events) and doesn't require a true connection to the source of all knowledge (backend API).
+1. Set up required GCP resources:
+   ```bash
+   # Run the setup script to create necessary GCP resources
+   ../scripts/setup-gcp-tobira.sh
+   ```
 
-### Production Transmutation
+2. Configure GitHub secrets for CI/CD:
+   - Add `GCP_PROJECT_ID` and `GCP_SA_KEY` to your repository secrets
+   - See [GCP Deployment Guide](/docs/project/gcp_deployment.md) for details
 
-Create an optimized production gateway:
+3. Deploy via CI/CD:
+   - Push changes to the main branch to trigger automatic deployment
+   - Two Cloud Run services will be created:
+     - **Mock Tobira**: Simple version without WebAssembly
+     - **Shinri-no-Tobira**: Full WebAssembly version
 
-```bash
-# Using just
-just tobira-release
+For complete GCP deployment instructions, see the [GCP Deployment Guide](/docs/project/gcp_deployment.md).
 
-# Or directly
-cd tobira
-wasm-pack build --target web --release
-```
+## Known Issues and Solutions
 
-## The Universal Law of Equivalent Exchange
+### Localhost:8081 Infinite Loading Issue
 
-"Humankind cannot gain anything without first giving something in return. To obtain, something of equal value must be lost."
+**Problem**: When accessing http://localhost:8081/, the page shows "Loading..." indefinitely and doesn't render the application.
 
-Our Tobira follows this principle - in exchange for your time viewing our interface, you receive knowledge of events happening around you, a fair and equivalent exchange.
+**Root Causes**:
 
-## Browser Compatibility
+1. **MIME Type Mismatch**: The WebAssembly binary isn't served with the correct `application/wasm` MIME type
+2. **Path Resolution**: The browser can't find the WebAssembly file at the expected location
+3. **Bootstrap Error Handling**: Errors during WebAssembly initialization aren't properly reported
+4. **Container Port Mapping**: Container internal port doesn't match the exposed port
+5. **SRI Integrity Checks**: The Supabase library has strict SRI integrity checks that fail
 
-- Chrome/Edge 79+
-- Firefox 75+
-- Safari 14+
+**Solution Steps**:
+
+1. Run the automated fix script that addresses all issues:
+   ```bash
+   # Apply all fixes and create backups
+   ./fix-wasm-frontend.sh
+   
+   # Restart the WebAssembly container
+   ./restart-wasm-tobira.sh
+   ```
+
+2. Verify the fix worked by:
+   - Checking browser console for any remaining errors
+   - Verifying the HTTP response headers include `Content-Type: application/wasm` for .wasm files
+   - Confirming the WebAssembly binary is loading successfully
+   - Checking that the container maps port 8081 on host to port 8080 internally
+
+3. If issues persist, run the diagnostic script:
+   ```bash
+   ./debug-wasm.sh
+   ```
+
+4. Browser Console Debugging:
+   ```javascript
+   // Check if WebAssembly binary loaded correctly
+   console.log('wasm module status:', window.__wasm_module_status);
+   
+   // Check if env.js loaded correctly
+   console.log('env config:', window.ihoje_env);
+   
+   // Force mock data mode as a temporary fix
+   if (window.wasm) {
+     window.wasm.enable_mock_data();
+     window.wasm.render();
+   }
+   ```
+
+For a comprehensive breakdown of all WebAssembly issues and their solutions, see [DEBUG.md](DEBUG.md).

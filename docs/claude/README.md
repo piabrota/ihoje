@@ -19,9 +19,8 @@ graph TB
     
     subgraph ContextFiles["Context Files"]
         Bootstrap["bootstrap.md<br>Core Configuration"]
-        Cache["cache.md<br>Task Progress"]
+        Tracking["unified_tracking.md<br>Task Tracking System"]
         Critical["critical.md<br>Priority Issues"]
-        Checkpoints["checkpoints.md<br>Auto-Resume System"]
         Optimization["optimization.md<br>Token Strategies"]
         
         subgraph DomainFiles["Domain-Specific"]
@@ -48,22 +47,20 @@ graph TB
     Micro --> Bootstrap
     
     Minimal --> Bootstrap
-    Minimal --> Cache
+    Minimal --> unified_tracking
     
     Standard --> Bootstrap
-    Standard --> Cache
-    Standard --> Checkpoints
+    Standard --> unified_tracking
     
     Domain --> Bootstrap
-    Domain --> Cache
+    Domain --> unified_tracking
     Domain -.-> Sharingan
     Domain -.-> Frontend
     Domain -.-> Mangekyou
     
     Full --> Bootstrap
-    Full --> Cache
+    Full --> unified_tracking
     Full --> Critical
-    Full --> Checkpoints
     Full --> Optimization
     Full --> Sharingan
     Full --> Frontend
@@ -75,7 +72,7 @@ graph TB
     classDef command fill:#e5e5e5,stroke:#333,stroke-width:1px
     
     class Micro,Minimal,Standard,Domain,Full tier
-    class Bootstrap,Cache,Critical,Checkpoints,Optimization core
+    class Bootstrap,unified_tracking,Critical,Optimization core
     class Sharingan,Frontend,Mangekyou domain
     class Micro_CMD,Minimal_CMD,Standard_CMD,Domain_CMD,Full_CMD command
 ```
@@ -91,19 +88,12 @@ graph TB
    - **Token usage**: ~100 tokens
    - **When to modify**: When changing core project configurations
 
-2. **cache.md**
-   - **Purpose**: Tracks current task progress and history
-   - **Content**: Current task name, description, step checklist, notes
+2. **unified_tracking.md**
+   - **Purpose**: Tracks task progress, provides checkpoints and history
+   - **Content**: Task tracking system documentation, auto-resume functionality
    - **Used by**: Minimal, Standard, Domain, and Full contexts
-   - **Token usage**: ~150-300 tokens (varies with task complexity)
-   - **When to modify**: Updated automatically by task commands
-
-3. **checkpoints.md**
-   - **Purpose**: Provides checkpoint system for task tracking
-   - **Content**: Step tracking, error recovery, resume instructions
-   - **Used by**: Standard and Full contexts
-   - **Token usage**: ~400 tokens
-   - **When to modify**: When enhancing the checkpoint system
+   - **Token usage**: ~300-400 tokens
+   - **When to modify**: When enhancing the task tracking system
 
 4. **critical.md**
    - **Purpose**: High-priority issues requiring immediate attention
@@ -242,14 +232,16 @@ just token-usage
 just token-usage docs/claude/domain/sharingan.md
 ```
 
-### Checkpoint System Integration
+### Task Tracking System Integration
 
-The context system integrates with the checkpoint system:
+The context system integrates with the unified task tracking system:
 
-1. `just add-task "task_name" "description"`: Creates new task
-2. `just mark-step-complete "task" "step" "info"`: Marks progress
-3. `just mark-step-failed "task" "step" "error"`: Records failures
-4. `just task-cache`: Shows current task status
+1. `just task-add "task_name" "description"`: Creates new task
+2. `just task-complete "task" "step" "info"`: Marks progress
+3. `just task-fail "task" "step" "error"`: Records failures
+4. `just task-show`: Shows current task status
+5. `just task-list`: Lists all tasks
+6. `just task-switch "task"`: Switches to a different task
 
 When loading context, the system automatically includes:
 - Current task information
@@ -278,17 +270,23 @@ When creating or updating domain-specific context files:
    - Escalate to higher tiers only when necessary
    - Use domain-specific contexts for specialized work
 
-2. **Use the Checkpoint System**
+2. **Use the Task Tracking System**
    ```bash
    # Start a task
-   just add-task "feature-x" "Implement feature X"
+   just task-add "feature-x" "Implement feature X"
    
    # Track progress
-   just mark-step-complete "feature-x" "Create structure" "Added basic structure"
-   just mark-step-failed "feature-x" "Connect database" "Connection timeout"
+   just task-complete "feature-x" "Create structure" "Added basic structure"
+   just task-fail "feature-x" "Connect database" "Connection timeout"
    
    # Show current task status
-   just task-cache
+   just task-show
+   
+   # List all tasks
+   just task-list
+   
+   # Switch between tasks
+   just task-switch "another-feature"
    ```
 
 3. **Monitor Token Usage**
@@ -301,7 +299,7 @@ When creating or updating domain-specific context files:
    ```
 
 4. **Break Complex Tasks into Steps**
-   - Use the checkpoint system to split work
+   - Use the task tracking system to split work
    - Focus each Claude session on a specific subtask
    - Use different context tiers for different steps
 
@@ -314,9 +312,16 @@ When creating or updating domain-specific context files:
 
 The context system works with MCP tools for enhanced capabilities:
 
-1. **Sharingan Domain + Puppeteer MCP**: For event scraping
-2. **Frontend Domain + Browser MCP**: For frontend development
-3. **Mangekyou Domain + Sequential-Thinking MCP**: For implementation planning
+| MCP Tool | Used With | Purpose | Setup Command |
+|----------|-----------|---------|---------------|
+| **Mangekyou** | Implementation planning | Generate structured implementation plans | `just mcp-start` |
+| **Brave Search** | Web research | Access current web information | `just mcp-brave-api-setup` |
+| **Sequential Thinking** | Complex reasoning | Step-by-step problem solving | Built-in |
+| **Puppeteer** | Web automation | Scrape websites and test UI | Built-in |
+| **Filesystem** | File operations | Access external files and directories | Built-in |
+| **Fetch** | Web content | Retrieve and analyze web content | Built-in |
+
+### MCP Tool Commands
 
 Start MCP tools:
 ```bash
@@ -327,6 +332,38 @@ Check status:
 ```bash
 just mcp-status
 ```
+
+List all available MCP tools:
+```bash
+just mcp-list
+```
+
+Set up Brave Search API:
+```bash
+just mcp-brave-api-setup
+```
+
+### MCP Tool Usage Examples
+
+1. **Mangekyou + Implementation Planning**:
+   ```
+   Analyze our current code and create an implementation plan for adding PostgreSQL connection pooling
+   ```
+
+2. **Brave Search + Research**:
+   ```
+   Use Brave Search to find the latest information about Rust connection pooling best practices
+   ```
+
+3. **Sequential Thinking + Problem Solving**:
+   ```
+   Analyze why our API requests are failing and develop a step-by-step solution
+   ```
+
+4. **Puppeteer + Web Testing**:
+   ```
+   Use Puppeteer to test if our event scraper correctly extracts event data from this URL
+   ```
 
 ## Critical Mode
 

@@ -1,56 +1,63 @@
+use chrono::{NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc};
 
 /// Shared event model used by both tobira and backend
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Event {
     pub id: String,
     pub title: String,
-    pub date: String,
-    pub location: String,
+    pub description: Option<String>,
     pub url: String,
-    pub image_url: String,
+    pub date: NaiveDate,
+    pub time: Option<String>,
+    pub venue: Option<String>,
     pub city: String,
-    pub price: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<DateTime<Utc>>,
+    pub price: Option<String>,
+    pub image_url: Option<String>,
+    pub provider: String,
 }
 
 impl Event {
-    /// Create a new event with default "Fetching..." price
+    /// Create a new event with default values
     pub fn new(
         id: String,
         title: String,
-        date: String,
-        location: String,
         url: String,
-        image_url: String,
+        date: NaiveDate,
         city: String,
+        provider: String,
     ) -> Self {
         Self {
             id,
             title,
-            date,
-            location,
+            description: None,
             url,
-            image_url,
+            date,
+            time: None,
+            venue: None,
             city,
-            price: "Fetching...".to_string(),
-            created_at: Some(Utc::now()),
+            price: Some("Fetching...".to_string()),
+            image_url: None,
+            provider,
         }
     }
-    
+
     /// Determine if this event is free
     pub fn is_free(&self) -> bool {
-        self.price.contains("R$ 0,00") || 
-        self.price.to_lowercase().contains("grátis") ||
-        self.price.to_lowercase().contains("gratuito")
+        if let Some(price) = &self.price {
+            price.contains("R$ 0,00")
+                || price.to_lowercase().contains("grátis")
+                || price.to_lowercase().contains("gratuito")
+                || price.to_lowercase().contains("free")
+                || price.to_lowercase().contains("$0")
+        } else {
+            false
+        }
     }
-    
-    /// Get a formatted date string 
+
+    /// Get a formatted date string
     pub fn formatted_date(&self) -> String {
-        // Simple passthrough for now, could be enhanced with date formatting
-        self.date.clone()
+        self.date.format("%d/%m/%Y").to_string()
     }
 }
 
@@ -75,10 +82,12 @@ impl FailedPriceFetch {
             timestamp: Utc::now().to_rfc3339(),
         }
     }
-    
+
     /// Get a formatted string with error details
     pub fn error_details(&self) -> String {
-        format!("Error fetching price for '{}' (ID: {}): {}", 
-                self.title, self.id, self.error)
+        format!(
+            "Error fetching price for '{}' (ID: {}): {}",
+            self.title, self.id, self.error
+        )
     }
 }

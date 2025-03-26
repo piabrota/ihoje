@@ -1,0 +1,1 @@
+"""Tests for the Mangekyou MCP package."""

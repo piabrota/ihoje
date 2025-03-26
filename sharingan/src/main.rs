@@ -44,7 +44,7 @@ struct Args {
     /// API server port
     #[clap(long, default_value = "8080")]
     port: u16,
-    
+
     /// Skip database connection test (for testing purposes)
     #[clap(long)]
     skip_db_test: bool,
@@ -161,7 +161,14 @@ async fn main() -> Result<()> {
     }
 
     // Run the main scraping workflow with print_url_only flag
-    run_scraping_workflow(&config, &rate_limiter, &custom_logger, print_url_only, skip_db_test).await
+    run_scraping_workflow(
+        &config,
+        &rate_limiter,
+        &custom_logger,
+        print_url_only,
+        skip_db_test,
+    )
+    .await
 }
 
 fn setup_simplelog(log_path: &str) -> Result<()> {
@@ -259,14 +266,14 @@ async fn run_scraping_workflow(
     // - We are only testing URL construction with --print-url
     // - TEST_MODE environment variable is set
     // - Export format is not Postgres (GCP, CSV)
-    let export_is_postgres = config.db_config.export_format == ExportFormat::Postgres 
-                         || config.db_config.export_format == ExportFormat::PgWithGcpFallback;
-                         
-    let should_skip_db_test = skip_db_test || 
-                             print_url_only || 
-                             std::env::var("TEST_MODE").unwrap_or_default() == "true" ||
-                             !export_is_postgres;
-    
+    let export_is_postgres = config.db_config.export_format == ExportFormat::Postgres
+        || config.db_config.export_format == ExportFormat::PgWithGcpFallback;
+
+    let should_skip_db_test = skip_db_test
+        || print_url_only
+        || std::env::var("TEST_MODE").unwrap_or_default() == "true"
+        || !export_is_postgres;
+
     // Only test Postgres connection if explicitly needed
     if !should_skip_db_test {
         logger.info("Testing PostgreSQL database connection...")?;
@@ -367,12 +374,12 @@ async fn test_postgres_connection() -> Result<()> {
     }
 
     use crate::db::postgres::PostgresConfig;
-    
+
     // Check if PostgreSQL is configured
     if !PostgresConfig::is_configured() {
         return Err(anyhow::anyhow!("PostgreSQL is not configured. Set PG_HOST, PG_USER, PG_PASSWORD, PG_DATABASE environment variables"));
     }
-    
+
     // Try to create a PostgreSQL store (this will test the connection)
     let config = PostgresConfig::from_env()?;
     let pool = config.create_pool()?;

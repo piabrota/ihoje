@@ -14,6 +14,16 @@ The Sharingan module is responsible for:
 - Providing multiple levels of data extraction strategies
 - Rate-limited and respectful web scraping
 
+### Toji - System Doctor
+
+[Toji Implementation Guide](toji_implementation.md) - Documentation for the system doctor and dependency checker.
+
+The Toji module is responsible for:
+- Checking required binary installations (Docker, curl, etc.)
+- Verifying environment configurations (API keys, etc.)
+- Ensuring required services are running (PostgreSQL, etc.)
+- Providing diagnostic information for missing dependencies
+
 ## Diagram Standard
 
 All domain documentation uses Mermaid diagrams for visualization:
@@ -21,12 +31,17 @@ All domain documentation uses Mermaid diagrams for visualization:
 ```mermaid
 graph TD
     A[Domain Documentation] --> B[Sharingan]
+    A --> T[Toji]
     A --> C[Future Domain 1]
     A --> D[Future Domain 2]
     
     B --> B1[Implementation]
     B --> B2[API]
     B --> B3[Integration]
+    
+    T --> T1[System Checks]
+    T --> T2[Dependency Verification]
+    T --> T3[Diagnostics]
 ```
 
 ## Adding New Domain Documentation

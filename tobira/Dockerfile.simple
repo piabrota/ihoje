@@ -19,62 +19,30 @@ RUN echo '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewB
 # Create .htaccess file for MIME types
 RUN echo "AddType application/wasm .wasm" > /app/web/.htaccess
 
-EXPOSE 8080
+# Copy our enhanced security server
+COPY spa_server.py /app/
 
-# Create a custom SPA server file that properly handles WASM files
-RUN echo '#!/usr/bin/env python3\n\
-import http.server\n\
-import socketserver\n\
-import os\n\
-\n\
-class SPAHandler(http.server.SimpleHTTPRequestHandler):\n\
-    # Add MIME types for WebAssembly\n\
-    extensions_map = {\n\
-        **http.server.SimpleHTTPRequestHandler.extensions_map,\n\
-        ".wasm": "application/wasm",\n\
-    }\n\
-    \n\
-    def end_headers(self):\n\
-        # Add CORS headers to allow fetch requests\n\
-        self.send_header("Access-Control-Allow-Origin", "*")\n\
-        # Explicitly set WASM MIME type for all .wasm files\n\
-        if self.path.endswith(".wasm"):\n\
-            self.send_header("Content-Type", "application/wasm")\n\
-        http.server.SimpleHTTPRequestHandler.end_headers(self)\n\
-    \n\
-    def do_GET(self):\n\
-        print(f"GET request for: {self.path}")\n\
-        # For WASM files, add special handling\n\
-        if self.path.endswith(".wasm"):\n\
-            print(f"  -> Serving WASM file with application/wasm MIME type")\n\
-            # Ensure specific content type for .wasm files\n\
-            filepath = os.path.join(os.getcwd(), self.path.lstrip("/"))\n\
-            if os.path.exists(filepath):\n\
-                with open(filepath, "rb") as f:\n\
-                    content = f.read()\n\
-                    self.send_response(200)\n\
-                    self.send_header("Content-Type", "application/wasm")\n\
-                    self.send_header("Content-Length", str(len(content)))\n\
-                    self.end_headers()\n\
-                    self.wfile.write(content)\n\
-                    return\n\
-        \n\
-        # Handle SPA routing - serve index.html for non-existent paths\n\
-        if not os.path.exists(os.path.join("/app/web", self.path.lstrip("/"))):\n\
-            self.path = "/index.html"\n\
-        return http.server.SimpleHTTPRequestHandler.do_GET(self)\n\
-\n\
-handler = SPAHandler\n\
-port = 8080\n\
-\n\
-print(f"Starting SPA server on port {port}")\n\
-with socketserver.TCPServer(("", port), handler) as httpd:\n\
-    os.chdir("/app/web")\n\
-    print(f"Serving SPA at http://localhost:{port}")\n\
-    print(f"WebAssembly MIME type: application/wasm")\n\
-    httpd.serve_forever()' > /app/spa_server.py
+# Make log directories
+RUN mkdir -p /app/logs
+
+# Create directories for authentication
+RUN mkdir -p /app/web/auth
+
+# Set development environment variable
+ENV IHOJE_ENVIRONMENT=development
+
+# Add debugging tools
+RUN apt-get update && \
+    apt-get install -y curl net-tools netcat-openbsd procps iproute2 iputils-ping && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add debug script
+RUN echo '#!/bin/bash\nps -ef\nnetstat -tuln\ncurl -v http://localhost:8080\necho "Server logs:"\ncat /app/logs/*.log 2>/dev/null || echo "No log files found"' > /app/debug.sh && \
+    chmod +x /app/debug.sh
+
+EXPOSE 8080
 
 # Make the server script executable
 RUN chmod +x /app/spa_server.py
 
-CMD ["python", "/app/spa_server.py"]
+CMD ["python", "/app/spa_server.py", "8080", "/app/web"]

@@ -97,6 +97,14 @@ help:
     @echo "  mcp-stop             - Stop specific server"
     @echo "  mcp-uninstall-all    - Uninstall all iHoje MCP tools"
     @echo ""
+    @echo "System Doctor:"
+    @echo "  run-toji-check       - Run Toji system dependency check"
+    @echo "  run-hadolint         - Run Docker linter on all Dockerfiles"
+    @echo "  install-hadolint     - Install Hadolint Docker linter"
+    @echo "  toji-install-gleam   - Install Gleam language if missing"
+    @echo "  toji-build           - Build Toji binary"
+    @echo "  toji-test            - Run Toji tests"
+    @echo ""
     @echo "For more help: just CATEGORY-help"
     @echo "For full list: just --list"
 
@@ -111,6 +119,18 @@ run-api port="8080":
 # Run both tobira and backend
 run-fullstack:
     @just --justfile justfiles/run.justfile fullstack
+    
+# Run system check with Toji
+run-toji-check *COMPONENT="":
+    @just --justfile justfiles/toji.justfile toji-check {{COMPONENT}}
+    
+# Run Docker linter (hadolint) on all Dockerfiles
+run-hadolint:
+    @just --justfile justfiles/toji.justfile lint-dockerfiles
+    
+# Install Hadolint Docker linter
+install-hadolint:
+    @just --justfile justfiles/toji.justfile install-hadolint
 
 # Run with city
 run-city city=default_city:
@@ -413,8 +433,8 @@ gugu-help:
     @just --justfile justfiles/gugu.justfile help
     
 # CI commands
-ci +ARGS:
-    @just --justfile justfiles/ci.justfile {{ARGS}}
+ci *ARGS="all":
+    @just --justfile justfiles/ci.justfile ci {{ARGS}}
 
 # Show CI commands help
 ci-help:

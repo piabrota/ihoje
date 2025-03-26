@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iHoje - Simple Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .loading {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .error {
+            color: red;
+            background-color: #ffeeee;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
+            display: none;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>iHoje - Simple Test Page</h1>
+        
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Testing WebAssembly Loading...</p>
+        </div>
+        
+        <div class="status" id="status">Status: Initializing...</div>
+        
+        <div class="error" id="error">
+            <h3>Error</h3>
+            <pre id="error-message"></pre>
+        </div>
+        
+        <button id="test-wasm">Test WASM Import</button>
+        <button id="try-direct">Try Direct Load</button>
+        <button id="advanced-test" style="background-color: #9b59b6;">Advanced Test</button>
+    </div>
+
+    <script>
+        // Status update utility
+        function updateStatus(message) {
+            document.getElementById('status').textContent = "Status: " + message;
+            console.log("Status:", message);
+        }
+        
+        // Error display utility
+        function showError(message, error) {
+            const errorDiv = document.getElementById('error');
+            const errorMessage = document.getElementById('error-message');
+            
+            errorDiv.style.display = 'block';
+            errorMessage.textContent = message + "\n" + (error ? error.toString() : "");
+            console.error("Error:", message, error);
+        }
+        
+        // Test WebAssembly compile
+        async function testWasmCompile() {
+            try {
+                updateStatus("Testing WebAssembly compile...");
+                
+                // Create a simple test module
+                const bytes = new Uint8Array([
+                    0x00, 0x61, 0x73, 0x6d, // magic
+                    0x01, 0x00, 0x00, 0x00, // version
+                ]);
+                
+                // Try to compile it
+                const result = await WebAssembly.compile(bytes);
+                updateStatus("WebAssembly compile test successful!");
+                return true;
+            } catch (error) {
+                showError("WebAssembly compile test failed", error);
+                return false;
+            }
+        }
+        
+        // Try to import the main WASM module
+        async function testWasmImport() {
+            try {
+                updateStatus("Testing WASM module import...");
+                
+                // Try to import the module
+                const module = await import('./ihoje_frontend.js');
+                updateStatus("Module imported successfully! Exports: " + Object.keys(module).join(", "));
+                
+                if (typeof module.default === 'function') {
+                    updateStatus("Initializing WASM module...");
+                    try {
+                        const instance = await module.default();
+                        updateStatus("WASM initialized successfully! Exports: " + Object.keys(instance).join(", "));
+                        return true;
+                    } catch (error) {
+                        showError("WASM initialization failed", error);
+                        return false;
+                    }
+                } else {
+                    showError("Module default export is not a function", null);
+                    return false;
+                }
+            } catch (error) {
+                showError("WASM module import failed", error);
+                return false;
+            }
+        }
+        
+        // Try to load WASM file directly
+        async function tryDirectLoad() {
+            try {
+                updateStatus("Trying direct WASM file load...");
+                
+                // Check available files
+                const files = ['/ihoje-tobira_bg.wasm', '/ihoje_frontend_bg.wasm'];
+                const results = {};
+                
+                for (const file of files) {
+                    try {
+                        const response = await fetch(file, { method: 'HEAD' });
+                        results[file] = {
+                            exists: response.ok,
+                            status: response.status,
+                            contentType: response.headers.get('Content-Type')
+                        };
+                    } catch (e) {
+                        results[file] = { exists: false, error: e.message };
+                    }
+                }
+                
+                updateStatus("WASM file check results: " + JSON.stringify(results, null, 2));
+                
+                // Try to load the WASM file directly
+                if (results['/ihoje-tobira_bg.wasm']?.exists) {
+                    updateStatus("Loading WASM file directly...");
+                    
+                    const response = await fetch('/ihoje-tobira_bg.wasm');
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch WASM file: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const bytes = await response.arrayBuffer();
+                    updateStatus(`WASM file loaded: ${bytes.byteLength} bytes`);
+                    
+                    // Try to compile it
+                    const module = await WebAssembly.compile(bytes);
+                    updateStatus("WASM file compiled successfully!");
+                    
+                    // Try to instantiate it with proper imports
+                    try {
+                        // Create proper import object with environment
+                        const importObject = {
+                            env: {
+                                memory: new WebAssembly.Memory({ initial: 17, maximum: 16384 }),
+                                // Required web_sys functions
+                                __wbg_new_59cb74e423758ede: () => { return new Error(); },
+                                __wbg_stack_558ba5917b466edd: (obj) => { return ""; },
+                                __wbg_error_4bb6c2a97407129a: (message) => { console.error(message); },
+                                // Required DOM functions
+                                __wbindgen_object_drop_ref: () => {},
+                                __wbindgen_string_new: () => {},
+                                __wbindgen_cb_drop: () => {},
+                                __wbg_createElement_97645ca8bec5df2e: () => {},
+                                __wbg_createTextNode_26fd5f439dd7c33a: () => {},
+                                // Time related functions
+                                __wbg_performance_b21afb8c5003f915: () => { 
+                                    return performance ? performance : { now: () => Date.now() }; 
+                                },
+                                __wbg_now_c3274acb701904b2: () => { return Date.now(); },
+                                // Console functions
+                                __wbg_log_7761a8b8a8c1864e: (text) => { console.log(text); }
+                            },
+                            wasi_snapshot_preview1: {
+                                fd_write: () => {},
+                                proc_exit: () => {}
+                            }
+                        };
+                        
+                        const instance = await WebAssembly.instantiate(module, importObject);
+                        updateStatus("WASM file instantiated successfully! Exports: " + 
+                                    Object.keys(instance.exports).join(", "));
+                        return true;
+                    } catch (error) {
+                        showError("WASM instantiation failed", error);
+                        return false;
+                    }
+                } else {
+                    showError("WASM file not found", null);
+                    return false;
+                }
+            } catch (error) {
+                showError("Direct WASM load failed", error);
+                return false;
+            }
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Test WebAssembly support
+            if (typeof WebAssembly !== 'object') {
+                showError("WebAssembly is not supported in this browser", null);
+                return;
+            }
+            
+            updateStatus("WebAssembly is supported in this browser");
+            
+            // Test WebAssembly compile
+            await testWasmCompile();
+            
+            // Add event listeners to buttons
+            document.getElementById('test-wasm').addEventListener('click', testWasmImport);
+            document.getElementById('try-direct').addEventListener('click', tryDirectLoad);
+            
+            // Add advanced test functionality
+            document.getElementById('advanced-test').addEventListener('click', advancedTest);
+        });
+        
+        // Advanced test with complete environment setup
+        async function advancedTest() {
+            try {
+                const mockAdmin = {
+                    id: "test-admin-id-123",
+                    email: "admin@test.com",
+                    name: "Test Admin",
+                    role: "admin",
+                    access_token: "mock-token-123"
+                };
+                
+                // Set admin user in localStorage for testing
+                localStorage.setItem("ihoje_auth", JSON.stringify(mockAdmin));
+                
+                // Set environment variables for the app
+                window.ihoje_env = {
+                    IHOJE_ENVIRONMENT: "development",
+                    IHOJE_API_URL: "http://localhost:8080/api",
+                    IHOJE_USE_MOCK_DATA: "true"
+                };
+                
+                window.get_env_var = function(name) {
+                    return (window.ihoje_env && window.ihoje_env[name]) || "";
+                };
+                
+                updateStatus("Loading ihoje_frontend.js...");
+                const module = await import('./ihoje_frontend.js');
+                
+                // Debug what's in the module
+                updateStatus("Module exports: " + Object.keys(module).join(", "));
+                
+                // Find the start function if available
+                if (typeof module.run_app === 'function' || typeof module.start === 'function') {
+                    const startFn = module.start || module.run_app;
+                    updateStatus("Found start function, calling directly...");
+                    startFn();
+                    updateStatus("Start function called successfully!");
+                    return true;
+                }
+                
+                if (typeof module.default === 'function') {
+                    updateStatus("Initializing WASM module using default()...");
+                    
+                    // Set the proper memory for compatibility
+                    if (!WebAssembly.Memory) {
+                        WebAssembly.Memory = function(opts) {
+                            return { buffer: new ArrayBuffer(opts.initial * 65536) };
+                        };
+                    }
+                    
+                    const wasm = await module.default();
+                    updateStatus("WASM initialized with exports: " + Object.keys(wasm).join(", "));
+                    
+                    // Try to enable mock data if available
+                    if (typeof wasm.enable_mock_data === 'function') {
+                        updateStatus("Enabling mock data...");
+                        wasm.enable_mock_data();
+                    }
+                    
+                    // Try to call the start function if available
+                    if (typeof wasm.__wbindgen_start === 'function') {
+                        updateStatus("Calling __wbindgen_start...");
+                        wasm.__wbindgen_start();
+                    } else if (typeof wasm.start === 'function') {
+                        updateStatus("Calling start()...");
+                        wasm.start();
+                    } else if (typeof wasm.run_app === 'function') {
+                        updateStatus("Calling run_app()...");
+                        wasm.run_app();
+                    }
+                    
+                    updateStatus("WASM initialization complete!");
+                    return wasm;
+                } else {
+                    throw new Error("Module default export is not a function");
+                }
+            } catch (error) {
+                console.error("Failed to load WASM:", error);
+                showError("Failed to load WebAssembly module", error);
+                throw error;
+            }
+        }
+    </script>
+</body>
+</html>

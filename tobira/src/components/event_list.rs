@@ -1,7 +1,7 @@
-use yew::prelude::*;
-use crate::models::{Event, EventQuery};
-use crate::i18n::{use_i18n, Language, TranslationKey};
 use super::event_card::EventCard;
+use crate::i18n::{use_i18n, Language, TranslationKey};
+use crate::models::{Event, EventQuery};
+use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
 pub struct EventListProps {
@@ -15,8 +15,10 @@ pub struct EventListProps {
 #[function_component(EventList)]
 pub fn event_list(props: &EventListProps) -> Html {
     let i18n = use_i18n::<Language, TranslationKey>();
-    
-    let filtered_events = props.events.iter()
+
+    let filtered_events = props
+        .events
+        .iter()
         .filter(|event| {
             // Manual filtering based on EventQuery
             // City filter
@@ -25,27 +27,29 @@ pub fn event_list(props: &EventListProps) -> Html {
                     return false;
                 }
             }
-            
+
             // Search filter
             if let Some(search) = &props.filter.search {
-                if !search.is_empty() && !event.title.to_lowercase().contains(&search.to_lowercase()) {
+                if !search.is_empty()
+                    && !event.title.to_lowercase().contains(&search.to_lowercase())
+                {
                     return false;
                 }
             }
-            
+
             // Free only filter
             if let Some(true) = props.filter.free_only {
                 if !event.is_free() {
                     return false;
                 }
             }
-            
+
             true
         })
         .collect::<Vec<_>>();
-    
+
     let events_count = filtered_events.len();
-    
+
     if props.is_loading {
         return html! {
             <div class="events-loading">
@@ -53,7 +57,7 @@ pub fn event_list(props: &EventListProps) -> Html {
             </div>
         };
     }
-    
+
     if events_count == 0 {
         return html! {
             <div class="events-empty">
@@ -61,7 +65,7 @@ pub fn event_list(props: &EventListProps) -> Html {
             </div>
         };
     }
-    
+
     html! {
         <div class="events-container">
             <div class="events-count">
@@ -76,9 +80,9 @@ pub fn event_list(props: &EventListProps) -> Html {
             <div class="events-grid">
                 { filtered_events.iter().map(|event| {
                     html! {
-                        <EventCard 
-                            event={(*event).clone()} 
-                            on_select={props.on_select_event.clone()} 
+                        <EventCard
+                            event={(*event).clone()}
+                            on_select={props.on_select_event.clone()}
                         />
                     }
                 }).collect::<Html>() }

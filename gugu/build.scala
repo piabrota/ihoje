@@ -16,6 +16,10 @@
 //> using lib "org.slf4j:slf4j-api:2.0.9"
 //> using lib "ch.qos.logback:logback-classic:1.4.14"
 
+// ScalaFix
+//> using lib "org.scalameta::scalafix-core:0.11.1"
+//> using lib "org.scalameta::scalafix-rules:0.11.1"
+
 // Resource directories
 //> using resourceDir "src/main/resources"
 //> using test.resourceDir "src/test/resources"
@@ -28,3 +32,7 @@
 
 // Test framework
 //> using testFramework "org.scalatest.tools.Framework"
+
+// ScalaFix configuration
+// Commented out to fix CI issues
+//# using file .scalafix.conf

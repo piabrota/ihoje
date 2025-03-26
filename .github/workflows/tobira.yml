@@ -1,0 +1,182 @@
+name: Tobira CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'tobira/**'
+      - 'pokeball/**'  # Dependency of tobira
+      - 'sharingan/**' # Optional dependency
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/tobira.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'tobira/**'
+      - 'pokeball/**'
+      - 'sharingan/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/tobira.yml'
+  workflow_dispatch:  # Allow manual triggering
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGISTRY_LOCATION: us-central1
+  GCP_REGISTRY_NAME: tobira-containers
+
+jobs:
+  build-and-test:
+    name: Build and Test Tobira
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - name: Install Trunk
+        uses: jetli/trunk-action@v0.4.0
+        with:
+          version: 'latest'
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./tobira -> target"
+          
+      - name: Install just
+        uses: extractions/setup-just@v1
+        
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli
+        
+      - name: Run CI checks using Just
+        run: just --justfile justfiles/ci.justfile tobira-ci
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tobira-dist
+          path: tobira/dist
+          retention-days: 7
+
+  deploy-container-images:
+    name: Deploy Container Images
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: tobira-dist
+          path: tobira/dist
+      
+      # Set up Docker and Google Cloud authentication
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Google Cloud Auth
+        id: auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      
+      - name: Configure Docker for GCP Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.GCP_REGISTRY_LOCATION }}-docker.pkg.dev
+      
+      # Build and push Mock Tobira container
+      - name: Build and push Mock Tobira
+        uses: docker/build-push-action@v5
+        with:
+          context: ./tobira
+          file: ./tobira/Dockerfile.simple
+          push: true
+          tags: |
+            ${{ env.GCP_REGISTRY_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REGISTRY_NAME }}/mock:latest
+            ${{ env.GCP_REGISTRY_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REGISTRY_NAME }}/mock:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      # Build and push Shinri-no-Tobira container
+      - name: Build and push Shinri-no-Tobira
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./tobira/Dockerfile
+          push: true
+          tags: |
+            ${{ env.GCP_REGISTRY_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REGISTRY_NAME }}/shinri-no-tobira:latest
+            ${{ env.GCP_REGISTRY_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REGISTRY_NAME }}/shinri-no-tobira:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-to-cloud-run:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    needs: deploy-container-images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Google Cloud Auth
+        id: auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      
+      # Deploy Mock service to Cloud Run
+      - name: Deploy Mock to Cloud Run
+        run: |
+          gcloud run deploy tobira-mock \
+            --image=${{ env.GCP_REGISTRY_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REGISTRY_NAME }}/mock:${{ github.sha }} \
+            --region=${{ env.GCP_REGISTRY_LOCATION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --memory=512Mi \
+            --cpu=1000m \
+            --min-instances=0 \
+            --max-instances=2 \
+            --port=8080 \
+            --set-env-vars=IHOJE_ENVIRONMENT=production
+      
+      # Deploy Shinri-no-Tobira service to Cloud Run
+      - name: Deploy Shinri-no-Tobira to Cloud Run
+        run: |
+          gcloud run deploy shinri-no-tobira \
+            --image=${{ env.GCP_REGISTRY_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REGISTRY_NAME }}/shinri-no-tobira:${{ github.sha }} \
+            --region=${{ env.GCP_REGISTRY_LOCATION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --memory=1Gi \
+            --cpu=1000m \
+            --min-instances=0 \
+            --max-instances=3 \
+            --port=8080 \
+            --set-env-vars=IHOJE_ENVIRONMENT=production,IHOJE_API_URL=https://api.ihoje.app
+      
+      # Get and output service URLs
+      - name: Get Service URLs
+        run: |
+          echo "Mock Tobira URL: $(gcloud run services describe tobira-mock --region=${{ env.GCP_REGISTRY_LOCATION }} --format='value(status.url)')"
+          echo "Shinri-no-Tobira URL: $(gcloud run services describe shinri-no-tobira --region=${{ env.GCP_REGISTRY_LOCATION }} --format='value(status.url)')"

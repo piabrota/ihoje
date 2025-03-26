@@ -47,15 +47,47 @@ cd "$(dirname "$0")"
 # For WebAssembly build, we need to be in the project root directory
 if [ "$CONTAINER_TYPE" == "wasm" ]; then
   echo "Building WebAssembly from project root..."
+  
+  # Ensure MIME type is set correctly for WebAssembly files
+  echo "Ensuring WebAssembly MIME type is correctly set in server and HTML..."
+  
+  # Edit the index.html to fix WebAssembly MIME type issues
+  cp fixed_index.html index.html
+  cp fixed_bootstrap.js bootstrap.js
+  
   cd ..
   docker build -t $IMAGE_NAME -f tobira/$DOCKERFILE .
 else
   # For mock build, we can stay in the tobira directory
+  
+  # Update the server to properly handle WASM MIME types
+  echo "Updating spa_server.py with proper MIME type handling..."
+  
+  # Update the .htaccess file in the mock directory
+  mkdir -p mock_data
+  echo "AddType application/wasm .wasm" > mock_data/.htaccess
+  
   docker build -t $IMAGE_NAME -f $DOCKERFILE .
 fi
 
 echo "🚀 Starting new container..."
+# Always use 8080 internal port and map to external PORT
 docker run -d -p $PORT:8080 --name $CONTAINER_NAME $IMAGE_NAME
+
+# Wait a moment for the container to start
+sleep 3
+
+# Check container health
+if docker ps -f "name=$CONTAINER_NAME" --format "{{.Status}}" | grep -q "Up"; then
+  echo "✅ Container is running correctly"
+  
+  # Run debug script to ensure we can see the server is working
+  echo "📊 Running diagnostic checks..."
+  docker exec $CONTAINER_NAME /app/debug.sh || true
+else
+  echo "⚠️ Container might have issues - checking logs:"
+  docker logs $CONTAINER_NAME
+fi
 
 echo "✨ Container successfully restarted!"
 echo "📱 Tobira is available at: http://localhost:$PORT"

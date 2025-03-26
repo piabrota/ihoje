@@ -1,0 +1,34 @@
+# Hadolint configuration for iHoje project
+# https://github.com/hadolint/hadolint
+
+# Ignored rules:
+# DL3008: Pin versions in apt-get install
+# DL3013: Pin versions in pip install
+# DL3016: Pin versions in npm install
+# DL3018: Pin versions in apk add
+# DL3059: Multiple consecutive RUN instructions
+ignored:
+  - DL3008
+  - DL3013
+  - DL3016
+  - DL3018
+  - DL3059
+
+# Trusted registries for FROM commands
+trusted-registry:
+  - docker.io
+  - registry.hub.docker.com
+  - gcr.io
+
+# Output formatting
+no-color: false
+
+# Label schema validation
+label-schema:
+  maintainer: text
+  version: semver
+  description: text
+
+# Treat warnings as info level
+warning: []
+info: []

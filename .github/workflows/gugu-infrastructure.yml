@@ -1,0 +1,71 @@
+name: GCP Infrastructure CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gugu/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'gugu/**'
+  workflow_dispatch:
+
+jobs:
+  infrastructure:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Needed for GCP workload identity federation
+      pull-requests: write # Needed for PR comments
+      
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Scala
+        uses: VirtusLab/scala-cli-setup@v1.0
+        
+      - name: Set up Pulumi
+        uses: pulumi/actions@v4
+
+      # Install the "just" command runner
+      - name: Install Just
+        uses: extractions/setup-just@v1
+        with:
+          just-version: 1.13.0
+
+      - name: Check Dependencies
+        run: |
+          just gugu check-deps
+        working-directory: ./gugu
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v1
+        with:
+          # Option 1: Workload Identity Federation (recommended for production)
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          # Option 2: Service account key (simpler but less secure)
+          # credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+      
+      - name: Preview Infrastructure Changes
+        uses: pulumi/actions@v4
+        with:
+          command: preview
+          stack-name: ${{ github.event.pull_request.base.ref == 'main' && 'prod' || 'dev' }}
+          work-dir: ./gugu
+          comment-on-pr: true
+        if: github.event_name == 'pull_request'
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
+      - name: Deploy Infrastructure
+        uses: pulumi/actions@v4
+        with:
+          command: up
+          stack-name: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          work-dir: ./gugu
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}

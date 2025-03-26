@@ -1,38 +1,51 @@
 # justfile for Toji system doctor
 # Toji is inspired by Toji Fushiguro from Jujutsu Kaisen
 
+# Enable dotenv-load to ensure environment variables are loaded from .env file
+set dotenv-load
+
 # Run the system doctor to check dependencies
 toji-check *COMPONENT:
     @echo "Running Toji system doctor..."
-    @echo "Checking system components..."
-    @echo "🔍 Checking Docker..."
-    @which docker >/dev/null 2>&1 && echo "  ✅ Docker is available" || echo "  ❌ Docker is missing"
-    @echo "🔍 Checking curl..."
-    @which curl >/dev/null 2>&1 && echo "  ✅ curl is available" || echo "  ❌ curl is missing"
-    @echo "🔍 Checking Google Cloud CLI..."
-    @which gcloud >/dev/null 2>&1 && echo "  ✅ Google Cloud CLI is available" || echo "  ❌ Google Cloud CLI is missing"
-    @echo "🔍 Checking PostgreSQL..."
-    @if which psql >/dev/null 2>&1; then \
-      if ps aux | grep 'postgres' | grep -v grep >/dev/null 2>&1; then \
-        if psql -h localhost -U postgres -c '\l' -t >/dev/null 2>&1; then \
-          echo "  ✅ PostgreSQL server is running and accepting connections"; \
-        else \
-          echo "  ⚠️ PostgreSQL server is running but connection failed (auth/config issue)"; \
-        fi; \
-      else \
-        echo "  ⚠️ PostgreSQL client is installed but server is not running"; \
-      fi; \
+    @if [ "{{COMPONENT}}" = "db" ] || [ "{{COMPONENT}}" = "postgres" ]; then \
+        cd /home/h0ffmann/Code/ihoje/toji && gleam run; \
     else \
-      echo "  ❌ PostgreSQL client is missing"; \
+        echo "Checking system components..."; \
+        echo "🔍 Checking Docker..."; \
+        which docker >/dev/null 2>&1 && echo "  ✅ Docker is available" || echo "  ❌ Docker is missing"; \
+        echo "🔍 Checking curl..."; \
+        which curl >/dev/null 2>&1 && echo "  ✅ curl is available" || echo "  ❌ curl is missing"; \
+        echo "🔍 Checking Google Cloud CLI..."; \
+        which gcloud >/dev/null 2>&1 && echo "  ✅ Google Cloud CLI is available" || echo "  ❌ Google Cloud CLI is missing"; \
+        echo "🔍 Checking PostgreSQL..."; \
+        if which psql >/dev/null 2>&1; then \
+          if ps aux | grep 'postgres' | grep -v grep >/dev/null 2>&1; then \
+            if psql -h localhost -U postgres -c '\l' -t >/dev/null 2>&1; then \
+              echo "  ✅ PostgreSQL server is running and accepting connections"; \
+              echo "     Use 'just toji-check db' for detailed database information"; \
+            else \
+              echo "  ⚠️ PostgreSQL server is running but connection failed (auth/config issue)"; \
+            fi; \
+          else \
+            echo "  ⚠️ PostgreSQL client is installed but server is not running"; \
+          fi; \
+        else \
+          echo "  ❌ PostgreSQL client is missing"; \
+        fi; \
+        echo "🔍 Checking Brave API Key..."; \
+        [ -n "$BRAVE_API_KEY" ] && echo "  ✅ Brave API Key is available" || echo "  ❌ Brave API Key is missing"; \
+        echo "🔍 Checking Hadolint (Docker Linter)..."; \
+        if which hadolint >/dev/null 2>&1; then echo "  ✅ Hadolint is available"; \
+        elif which docker >/dev/null 2>&1; then \
+          echo "  ⚠️ Hadolint is not installed locally, but can use Docker image as fallback"; \
+          echo "     Run: docker run --rm -i hadolint/hadolint < Dockerfile"; \
+        else echo "  ❌ Hadolint is missing and Docker is not available to run it as a container"; fi; \
     fi
-    @echo "🔍 Checking Brave API Key..."
-    @[ -n "$BRAVE_API_KEY" ] && echo "  ✅ Brave API Key is available" || echo "  ❌ Brave API Key is missing"
-    @echo "🔍 Checking Hadolint (Docker Linter)..."
-    @if which hadolint >/dev/null 2>&1; then echo "  ✅ Hadolint is available"; \
-    elif which docker >/dev/null 2>&1; then \
-      echo "  ⚠️ Hadolint is not installed locally, but can use Docker image as fallback"; \
-      echo "     Run: docker run --rm -i hadolint/hadolint < Dockerfile"; \
-    else echo "  ❌ Hadolint is missing and Docker is not available to run it as a container"; fi
+
+# Check PostgreSQL database details (tables, rows, etc.)
+toji-db-info:
+    @echo "Checking PostgreSQL database details..."
+    @cd /home/h0ffmann/Code/ihoje/toji && gleam run
 
 # Install Gleam if not already installed
 install-gleam:

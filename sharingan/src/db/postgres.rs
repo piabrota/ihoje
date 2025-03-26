@@ -40,13 +40,13 @@ impl PostgresConfig {
             database,
         })
     }
-    
+
     /// Check if PostgreSQL is properly configured in the environment
     pub fn is_configured() -> bool {
-        env::var("PG_HOST").is_ok() ||
-        env::var("PG_USER").is_ok() ||
-        env::var("PG_PASSWORD").is_ok() ||
-        env::var("PG_DATABASE").is_ok()
+        env::var("PG_HOST").is_ok()
+            || env::var("PG_USER").is_ok()
+            || env::var("PG_PASSWORD").is_ok()
+            || env::var("PG_DATABASE").is_ok()
     }
 
     /// Create a connection pool
@@ -87,12 +87,13 @@ impl PostgresEventStore {
         let test_mode_explicit = std::env::var("TEST_POSTGRES").is_ok();
         let skip_db_explicit = std::env::var("SKIP_DB").is_ok();
 
-        // Use test mode if: 
+        // Use test mode if:
         // - auto-detected test mode
         // - explicitly requested test mode
         // - explicitly requested to skip database
         // - PostgreSQL is not properly configured
-        let use_test_mode = is_test || test_mode_explicit || skip_db_explicit || !PostgresConfig::is_configured();
+        let use_test_mode =
+            is_test || test_mode_explicit || skip_db_explicit || !PostgresConfig::is_configured();
 
         if use_test_mode {
             // Create a mock pool in test mode

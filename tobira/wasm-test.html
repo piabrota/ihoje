@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WASM Test Page</title>
+  <script>
+    // Simple loading indicator
+    document.addEventListener('DOMContentLoaded', () => {
+      const log = document.getElementById('log');
+      const addLog = (msg) => {
+        const entry = document.createElement('div');
+        entry.textContent = msg;
+        log.appendChild(entry);
+      };
+      
+      // Global error handler
+      window.addEventListener('error', (event) => {
+        addLog(`ERROR: ${event.message}`);
+      });
+      
+      // Log performance
+      performance.mark('page-load-start');
+      
+      // Load WASM with explicit error handling
+      addLog('Starting WASM load...');
+      
+      import('./bootstrap.js')
+        .then(() => {
+          addLog('Bootstrap loaded successfully');
+          performance.mark('bootstrap-complete');
+          performance.measure('bootstrap-load-time', 'page-load-start', 'bootstrap-complete');
+          const loadTime = performance.getEntriesByName('bootstrap-load-time')[0].duration;
+          addLog(`Bootstrap load time: ${loadTime.toFixed(2)}ms`);
+        })
+        .catch((error) => {
+          addLog(`Bootstrap error: ${error.message}`);
+          console.error(error);
+        });
+    });
+  </script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #log {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 10px 0;
+      height: 300px;
+      overflow-y: auto;
+      background: #f5f5f5;
+      font-family: monospace;
+    }
+    .controls {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 8px 16px;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .performance-metrics {
+      background: #e9f7ff;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebAssembly Test Page</h1>
+  
+  <div class="performance-metrics">
+    <h3>Performance Metrics</h3>
+    <div id="metrics"></div>
+  </div>
+  
+  <div class="controls">
+    <button id="clearLog">Clear Log</button>
+    <button id="testComponent">Test Component Render</button>
+    <button id="collectGarbage">Attempt GC</button>
+  </div>
+  
+  <h3>Debug Log</h3>
+  <div id="log"></div>
+  
+  <div id="app"></div>
+  
+  <script>
+    // Controls setup
+    document.getElementById('clearLog').addEventListener('click', () => {
+      document.getElementById('log').innerHTML = '';
+    });
+    
+    document.getElementById('testComponent').addEventListener('click', () => {
+      const log = document.getElementById('log');
+      log.innerHTML += '<div>Attempting to render test component...</div>';
+      
+      try {
+        // This will only work if WASM is loaded and exposes this function
+        if (window.wasm && window.wasm.render_test_component) {
+          window.wasm.render_test_component();
+          log.innerHTML += '<div>Test component rendered!</div>';
+        } else {
+          log.innerHTML += '<div>ERROR: WASM not loaded or test component function not available</div>';
+        }
+      } catch (e) {
+        log.innerHTML += `<div>ERROR: ${e.message}</div>`;
+      }
+    });
+    
+    document.getElementById('collectGarbage').addEventListener('click', () => {
+      const log = document.getElementById('log');
+      log.innerHTML += '<div>Attempting to trigger garbage collection...</div>';
+      
+      // This is just a hint, browser may ignore it
+      if (window.gc) {
+        window.gc();
+        log.innerHTML += '<div>GC triggered via window.gc()</div>';
+      } else {
+        log.innerHTML += '<div>window.gc() not available (enable in Chrome with --js-flags="--expose-gc")</div>';
+        // Try to create memory pressure
+        const pressure = [];
+        for (let i = 0; i < 10000; i++) {
+          pressure.push(new Array(10000).fill('x'));
+        }
+        log.innerHTML += '<div>Created memory pressure to encourage GC</div>';
+        pressure.length = 0;
+      }
+    });
+    
+    // Update metrics regularly
+    setInterval(() => {
+      const metrics = document.getElementById('metrics');
+      const entries = performance.getEntriesByType('measure');
+      
+      if (entries.length > 0) {
+        let html = '<ul>';
+        entries.forEach(entry => {
+          html += `<li><strong>${entry.name}:</strong> ${entry.duration.toFixed(2)}ms</li>`;
+        });
+        html += '</ul>';
+        metrics.innerHTML = html;
+      } else {
+        metrics.innerHTML = '<p>No performance measurements available yet.</p>';
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

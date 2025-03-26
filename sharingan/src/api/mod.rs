@@ -1,9 +1,6 @@
-use axum::{
-    routing::get,
-    Router,
-};
-use serde::Serialize;
 use crate::config::AppConfig;
+use axum::{routing::get, Router};
+use serde::Serialize;
 use std::sync::Arc;
 
 // Database API module

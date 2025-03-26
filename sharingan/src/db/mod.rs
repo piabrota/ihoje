@@ -2,11 +2,11 @@
 //!
 //! This module provides database operations for storing and retrieving events.
 
-pub mod postgres;
 pub mod gcp;
+pub mod postgres;
 
-use anyhow::Result;
 use crate::event::EventData;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -39,7 +39,9 @@ impl From<String> for ExportFormat {
     fn from(s: String) -> Self {
         match s.to_lowercase().as_str() {
             "gcp" => ExportFormat::Gcp,
-            "pg_with_gcp_fallback" | "pgwithgcpfallback" | "fallback" => ExportFormat::PgWithGcpFallback,
+            "pg_with_gcp_fallback" | "pgwithgcpfallback" | "fallback" => {
+                ExportFormat::PgWithGcpFallback
+            }
             "both" => ExportFormat::Both,
             _ => ExportFormat::Postgres, // Default to Postgres for any unrecognized format
         }
@@ -50,16 +52,20 @@ impl From<String> for ExportFormat {
 pub trait EventStore {
     /// Store multiple events
     fn store_events(&self, events: &[EventData]) -> Result<()>;
-    
+
     /// Clear all events (for testing/cleanup)
     fn clear_events(&self) -> Result<()>;
-    
+
     /// Get all events with optional filters
     fn get_events(&self, city: Option<&str>, limit: Option<usize>) -> Result<Vec<EventData>>;
-    
+
     /// Get a specific event by its ID
     fn get_event_by_id(&self, id: &str) -> Result<Option<EventData>>;
-    
+
     /// Get upcoming events (future dates)
-    fn get_upcoming_events(&self, city: Option<&str>, limit: Option<usize>) -> Result<Vec<EventData>>;
+    fn get_upcoming_events(
+        &self,
+        city: Option<&str>,
+        limit: Option<usize>,
+    ) -> Result<Vec<EventData>>;
 }

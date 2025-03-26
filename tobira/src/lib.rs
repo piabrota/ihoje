@@ -18,13 +18,13 @@ pub use utils::mock_data::{enable_mock_data, is_mock_data_enabled};
 pub fn start() {
     // Set panic hook for better error messages
     console_error_panic_hook::set_once();
-    
+
     // Initialize logging with debug level
     wasm_logger::init(wasm_logger::Config::new(log::Level::Debug));
-    
+
     // Log startup message
     log::info!("Starting iHoje tobira application via lib.rs");
-    
+
     // Initialize the Yew app
     yew::Renderer::<app::App>::new().render();
 }

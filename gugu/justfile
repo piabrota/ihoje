@@ -35,7 +35,7 @@ gugu-preview stack="dev":
 # Deploy infrastructure
 gugu-up stack="dev":
     @echo "🚀 Deploying infrastructure for stack {{stack}}..."
-    @scala-cli run --main-class dev.gugu.Main .
+    @scala-cli run --main-class ihoje.gugu.Main .
     @pulumi up --stack {{stack}} --yes
     @echo "✅ Infrastructure deployed successfully!"
 

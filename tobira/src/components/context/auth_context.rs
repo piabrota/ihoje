@@ -1,20 +1,20 @@
-use yew::prelude::*;
-use wasm_bindgen_futures::spawn_local;
-use std::rc::Rc;
 use log;
+use std::rc::Rc;
+use wasm_bindgen_futures::spawn_local;
+use yew::prelude::*;
 
-use crate::models::{User, AuthState};
 use crate::api::{ApiResult, SupabaseAuth};
+use crate::models::{AuthState, User};
 
 /// Auth context for managing authentication state
 #[derive(Debug, Clone, PartialEq)]
 pub struct AuthContext {
     /// Current auth state
     pub state: AuthState,
-    
+
     /// Login function
     pub login: Callback<()>,
-    
+
     /// Logout function
     pub logout: Callback<()>,
 }
@@ -28,17 +28,17 @@ impl AuthContext {
             logout: Callback::noop(),
         }
     }
-    
+
     /// Check if the user is authenticated
     pub fn is_authenticated(&self) -> bool {
         self.state.is_authenticated()
     }
-    
+
     /// Check if the user is an admin
     pub fn is_admin(&self) -> bool {
         self.state.is_admin()
     }
-    
+
     /// Get the current user
     pub fn user(&self) -> Option<&User> {
         self.state.user.as_ref()
@@ -56,28 +56,26 @@ pub struct AuthProviderProps {
 #[function_component(AuthProvider)]
 pub fn auth_provider(props: &AuthProviderProps) -> Html {
     let auth_state = use_state(|| AuthState::loading());
-    
+
     // Initialize Supabase Auth
     let supabase_auth = use_memo(
-        |_| {
-            match SupabaseAuth::new() {
-                Ok(auth) => Some(auth),
-                Err(e) => {
-                    log::error!("Failed to initialize Supabase Auth: {:?}", e);
-                    None
-                }
+        |_| match SupabaseAuth::new() {
+            Ok(auth) => Some(auth),
+            Err(e) => {
+                log::error!("Failed to initialize Supabase Auth: {:?}", e);
+                None
             }
         },
         (),
     );
-    
+
     // Check if the user is already logged in
     let auth_state_clone = auth_state.clone();
     use_effect_with_deps(
         move |_| {
             if let Some(auth) = supabase_auth.as_ref() {
                 let auth_state = auth_state_clone.clone();
-                
+
                 spawn_local(async move {
                     match auth.get_current_session().await {
                         Ok(Some(user)) => {
@@ -97,22 +95,22 @@ pub fn auth_provider(props: &AuthProviderProps) -> Html {
             } else {
                 auth_state_clone.set(AuthState::error("Failed to initialize Supabase Auth"));
             }
-            
+
             || ()
         },
         supabase_auth.clone(),
     );
-    
+
     // Handle login
     let login = {
         let auth_state = auth_state.clone();
         let supabase_auth = supabase_auth.clone();
-        
+
         Callback::from(move |_| {
             if let Some(auth) = supabase_auth.as_ref() {
                 let auth_state = auth_state.clone();
                 auth_state.set(AuthState::loading());
-                
+
                 spawn_local(async move {
                     match auth.sign_in_with_google().await {
                         Ok(user) => {
@@ -128,16 +126,16 @@ pub fn auth_provider(props: &AuthProviderProps) -> Html {
             }
         })
     };
-    
+
     // Handle logout
     let logout = {
         let auth_state = auth_state.clone();
         let supabase_auth = supabase_auth.clone();
-        
+
         Callback::from(move |_| {
             if let Some(auth) = supabase_auth.as_ref() {
                 let auth_state = auth_state.clone();
-                
+
                 spawn_local(async move {
                     match auth.sign_out().await {
                         Ok(_) => {
@@ -153,14 +151,14 @@ pub fn auth_provider(props: &AuthProviderProps) -> Html {
             }
         })
     };
-    
+
     // Create context value
     let context = AuthContext {
         state: (*auth_state).clone(),
         login,
         logout,
     };
-    
+
     html! {
         <ContextProvider<Rc<AuthContext>> context={Rc::new(context)}>
             { for props.children.iter() }
@@ -171,7 +169,8 @@ pub fn auth_provider(props: &AuthProviderProps) -> Html {
 /// Hook to use the auth context
 #[hook]
 pub fn use_auth() -> Rc<AuthContext> {
-    use_context::<Rc<AuthContext>>().expect("Auth context not found. Did you forget to wrap your component in AuthProvider?")
+    use_context::<Rc<AuthContext>>()
+        .expect("Auth context not found. Did you forget to wrap your component in AuthProvider?")
 }
 
 /// Component for requiring authentication
@@ -179,7 +178,7 @@ pub fn use_auth() -> Rc<AuthContext> {
 pub struct RequireAuthProps {
     #[prop_or_default]
     pub children: Children,
-    
+
     /// Component to render when not authenticated
     #[prop_or(html!{ <LoginRedirect /> })]
     pub fallback: Html,
@@ -190,25 +189,26 @@ pub struct RequireAuthProps {
 pub fn login_redirect() -> Html {
     let auth = use_auth();
     let history = use_history().unwrap();
-    
+
     // Handle login click
     let handle_login = {
         let login = auth.login.clone();
         let current_path = history.location().pathname();
-        
+
         Callback::from(move |_| {
             // Store current path in localStorage for redirect after login
             if current_path != "/" && current_path != "/login" {
-                if let Ok(_) = gloo_storage::LocalStorage::set("ihoje_auth_redirect", &current_path) {
+                if let Ok(_) = gloo_storage::LocalStorage::set("ihoje_auth_redirect", &current_path)
+                {
                     log::info!("Stored redirect path: {}", current_path);
                 }
             }
-            
+
             // Trigger login process
             login.emit(());
         })
     };
-    
+
     html! {
         <div class="login-redirect">
             <h2>{"You need to log in to access this page"}</h2>
@@ -242,7 +242,7 @@ pub fn login_redirect() -> Html {
 #[function_component(RequireAuth)]
 pub fn require_auth(props: &RequireAuthProps) -> Html {
     let auth = use_auth();
-    
+
     if auth.state.loading {
         return html! {
             <div class="loading-auth">
@@ -251,11 +251,11 @@ pub fn require_auth(props: &RequireAuthProps) -> Html {
             </div>
         };
     }
-    
+
     if auth.is_authenticated() {
         return html! { for props.children.iter() };
     }
-    
+
     props.fallback.clone()
 }
 
@@ -264,7 +264,7 @@ pub fn require_auth(props: &RequireAuthProps) -> Html {
 pub struct RequireAdminProps {
     #[prop_or_default]
     pub children: Children,
-    
+
     /// Component to render when not admin
     #[prop_or(html!{ <AdminAccessDenied /> })]
     pub fallback: Html,
@@ -286,7 +286,7 @@ pub fn admin_access_denied() -> Html {
 #[function_component(RequireAdmin)]
 pub fn require_admin(props: &RequireAdminProps) -> Html {
     let auth = use_auth();
-    
+
     if auth.state.loading {
         return html! {
             <div class="loading-auth">
@@ -295,14 +295,14 @@ pub fn require_admin(props: &RequireAdminProps) -> Html {
             </div>
         };
     }
-    
+
     if !auth.is_authenticated() {
         return html! { <LoginRedirect /> };
     }
-    
+
     if auth.is_admin() {
         return html! { for props.children.iter() };
     }
-    
+
     props.fallback.clone()
 }

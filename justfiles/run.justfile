@@ -100,6 +100,7 @@ run-static folder provider="pikachu" city="FL":
     export EXTRACTION_FOLDER="{{folder}}"
     export PROVIDER={{provider}}
     export CITY={{city}}
+    export RUST_LOG=info
     
     # Set a dummy API URL since we won't be using FireCrawler
     if [ "{{provider}}" = "pikachu" ]; then
@@ -108,9 +109,49 @@ run-static folder provider="pikachu" city="FL":
         export CHARMANDER_API_URL="https://example.com"
     fi
     
+    # Create a test bucket name for GCP
+    export GCP_BUCKET_NAME=test-bucket
+    export GCP_PROJECT_ID=test-project
+    export GCP_API_KEY=test-api-key
+    
     echo "Running in static extraction mode with folder: {{folder}}"
     echo "Provider: {{provider}} | City: {{city}}"
-    cargo run -p sharingan -- --skip-db-test --export gcp
+    echo "Using GCP export to test-bucket"
+    echo ""
+    
+    # Run the application with verbose output
+    # First create a temp log file and redirect the output there
+    LOG_FILE=$(mktemp)
+    cargo run -p sharingan -- --skip-db-test --export gcp > "$LOG_FILE" 2>&1
+    
+    # Show GCP-related logs
+    echo ""
+    echo "=== GCP-Related Log Output ==="
+    grep -i "gcp" "$LOG_FILE" || echo "No GCP logs found"
+    grep -i "export" "$LOG_FILE" || echo "No export logs found"
+    echo ""
+    
+    # Check if any GCP export files were generated
+    echo "Checking for GCP export files:"
+    find . -name "events_*.json.tmp" -type f -cmin -1 | while read -r file; do
+        echo "✅ Found GCP export file: $file"
+        echo "Contents (first 3 lines):"
+        head -3 "$file"
+        echo "..."
+    done
+    
+    # If no files found, show an error
+    if [ -z "$(find . -name "events_*.json.tmp" -type f -cmin -1)" ]; then
+        echo "❌ No GCP export files found. Export may have failed."
+        
+        # Show more detailed logs for debugging
+        echo ""
+        echo "=== Full Log Output ==="
+        cat "$LOG_FILE"
+    fi
+    
+    # Clean up
+    rm -f "$LOG_FILE"
     
 # Run httrack to extract website for static mode
 download-site url folder provider="pikachu":

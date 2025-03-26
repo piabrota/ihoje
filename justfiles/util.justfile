@@ -66,7 +66,7 @@ context-file output="context.md":
 
 # Clean build artifacts and logs
 clean:
-    cargo clean --package rust-scraper
+    cargo clean --package sharingan
     just clean-logs
 
 # Clean everything including dependencies
@@ -91,6 +91,9 @@ clean-logs:
     @find . -name "puppeteer.log" -delete
     @find . -name "sequential-thinking.log" -delete
     @find . -name "*.log" -not -path "./node_modules/*" -not -path "./.venv/*" -not -path "./target/*" -delete
+    @find . -name "*.json.tmp" -delete
+    @echo "Removing tobira_debug_* directories..."
+    @rm -rf justfiles/tobira_debug_* 2>/dev/null || true
     @# Note: We exclude logs in node_modules, .venv, and target directories
     @echo "Log files cleaned successfully!"
 

@@ -12,25 +12,25 @@ extern "C" {
 pub struct Config {
     /// Base URL for API requests
     pub api_base_url: String,
-    
+
     /// Whether to enable CORS for API requests
     pub enable_cors: bool,
-    
+
     /// Whether to use mock data instead of real API
     pub use_mock_data: bool,
-    
+
     /// Environment name
     pub environment: Environment,
-    
+
     /// API request timeout in seconds
     pub api_timeout_seconds: u32,
-    
+
     /// Whether to enable debug logging
     pub enable_debug_logging: bool,
-    
+
     /// Supabase URL
     pub supabase_url: String,
-    
+
     /// Supabase anon key
     pub supabase_anon_key: String,
 }
@@ -52,7 +52,7 @@ impl Environment {
             _ => Self::Development,
         }
     }
-    
+
     /// Get environment name
     pub fn name(&self) -> &'static str {
         match self {
@@ -61,7 +61,7 @@ impl Environment {
             Self::Production => "production",
         }
     }
-    
+
     /// Check if this is production
     pub fn is_production(&self) -> bool {
         matches!(self, Self::Production)
@@ -77,39 +77,41 @@ pub fn get_config() -> &'static Config {
         // Try to get environment variables from window object
         let env = get_env_var_or_default("IHOJE_ENVIRONMENT", "development");
         let environment = Environment::from_string(&env);
-        
+
         // Determine API URL based on environment
         let api_base_url = match environment {
             Environment::Production => {
                 get_env_var_or_default("IHOJE_API_URL", "https://api.ihoje.app/api")
-            },
+            }
             Environment::Staging => {
                 get_env_var_or_default("IHOJE_API_URL", "https://staging-api.ihoje.app/api")
-            },
+            }
             Environment::Development => {
                 get_env_var_or_default("IHOJE_API_URL", "http://localhost:8080/api")
             }
         };
-        
+
         // Configure other settings based on environment
         let use_mock_data = match environment {
-            Environment::Development => get_env_var_or_default("IHOJE_USE_MOCK_DATA", "true") == "true",
+            Environment::Development => {
+                get_env_var_or_default("IHOJE_USE_MOCK_DATA", "true") == "true"
+            }
             _ => false,
         };
-        
+
         let enable_debug_logging = match environment {
             Environment::Production => false,
             _ => true,
         };
-        
+
         let api_timeout_seconds = get_env_var_or_default("IHOJE_API_TIMEOUT", "30")
             .parse::<u32>()
             .unwrap_or(30);
-        
+
         // Get Supabase configuration
         let supabase_url = get_env_var_or_default("IHOJE_SUPABASE_URL", "");
         let supabase_anon_key = get_env_var_or_default("IHOJE_SUPABASE_ANON_KEY", "");
-            
+
         // Create config
         Config {
             api_base_url,
@@ -136,11 +138,11 @@ fn get_env_var_or_default(name: &str, default: &str) -> String {
 
 /// Create a JS snippet to inject environment variables
 pub fn generate_environment_js(
-    environment: &str, 
-    api_url: &str, 
+    environment: &str,
+    api_url: &str,
     use_mock_data: bool,
     supabase_url: &str,
-    supabase_anon_key: &str
+    supabase_anon_key: &str,
 ) -> String {
     format!(
         r#"window.ihoje_env = {{

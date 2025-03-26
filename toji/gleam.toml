@@ -1,0 +1,12 @@
+name = "toji"
+version = "0.1.0"
+description = "System doctor and dependency checker inspired by Toji Fushiguro"
+
+[dependencies]
+gleam_stdlib = "~> 0.32"
+gleeunit = "~> 0.10"
+simplifile = "~> 1.0"
+shellout = "~> 1.2"
+
+[dev-dependencies]
+gleeunit = "~> 0.10"

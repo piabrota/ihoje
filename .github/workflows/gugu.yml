@@ -1,0 +1,148 @@
+name: Gugu CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'gugu/**'
+      - '.github/workflows/gugu.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'gugu/**'
+      - '.github/workflows/gugu.yml'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-and-test:
+    name: Build and Test Gugu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Setup scala-cli
+        uses: VirtusLab/scala-cli-setup@v1
+        with:
+          scala-cli-version: latest
+          
+      - name: Cache Scala dependencies
+        uses: coursier/cache-action@v6
+        
+      - name: Install Pulumi CLI
+        uses: pulumi/setup-pulumi@v2
+        
+      - name: Install just
+        uses: extractions/setup-just@v1
+        
+      - name: Run CI checks using Just
+        run: just --justfile justfiles/ci.justfile gugu-ci
+          
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: gugu-docs
+          path: gugu/docs/api
+          retention-days: 7
+
+  preview-infrastructure:
+    name: Preview Infrastructure
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Setup scala-cli
+        uses: VirtusLab/scala-cli-setup@v1
+        with:
+          scala-cli-version: latest
+          
+      - name: Install Pulumi CLI
+        uses: pulumi/setup-pulumi@v2
+        
+      - name: Setup Pulumi
+        working-directory: ./gugu
+        run: |
+          mkdir -p .gugu/stacks/preview
+          pulumi stack init preview
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          
+      - name: Preview Infrastructure Changes
+        working-directory: ./gugu
+        run: |
+          scala-cli compile .
+          pulumi preview --stack preview
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          # Add any required GCP credentials as secrets
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          
+      - name: Comment PR with Preview
+        uses: pulumi/actions@v4
+        if: github.event_name == 'pull_request'
+        with:
+          command: preview
+          stack-name: preview
+          comment-on-pr: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          work-dir: ./gugu
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          
+  deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Setup scala-cli
+        uses: VirtusLab/scala-cli-setup@v1
+        with:
+          scala-cli-version: latest
+          
+      - name: Install Pulumi CLI
+        uses: pulumi/setup-pulumi@v2
+        
+      - name: Setup Pulumi
+        working-directory: ./gugu
+        run: |
+          mkdir -p .gugu/stacks/production
+          pulumi stack select production || pulumi stack init production
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          
+      - name: Deploy Infrastructure
+        working-directory: ./gugu
+        run: |
+          scala-cli compile .
+          scala-cli run --main-class ihoje.gugu.Main .
+          pulumi up --stack production --yes
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          # Add any required GCP credentials as secrets
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}

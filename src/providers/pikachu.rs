@@ -19,6 +19,81 @@ impl PikachuProvider {
     pub fn new() -> Self {
         Self {}
     }
+    
+    // Make price finding methods public for testing
+    pub fn find_price(&self, document: &Html) -> Option<String> {
+        // Look for price information using various selectors
+        let price_selectors = [
+            ".ticket-buy-price", 
+            ".evento-preco", 
+            ".price-box",
+            "[data-testid='price']",
+            "[class*='price']",
+            "[class*='valor']",
+        ];
+        
+        // Try to find price with each selector
+        for selector_str in &price_selectors {
+            if let Ok(selector) = Selector::parse(selector_str) {
+                for element in document.select(&selector) {
+                    let text = element.text().collect::<String>().trim().to_string();
+                    
+                    // If text contains "R$", it's likely a price
+                    if text.contains("R$") {
+                        return Some(text);
+                    }
+                    
+                    // Also check for attributes that might contain price info
+                    if let Some(price_attr) = element.value().attr("data-price") {
+                        if !price_attr.is_empty() {
+                            return Some(format!("R$ {}", price_attr));
+                        }
+                    }
+                }
+            }
+        }
+        
+        None
+    }
+
+    pub fn find_price_in_text(&self, document: &Html) -> Option<String> {
+        let text_selector = Selector::parse("p, span, div").unwrap();
+        
+        for element in document.select(&text_selector) {
+            let text = element.text().collect::<String>().trim().to_string();
+            
+            // Match text containing price information
+            if text.contains("R$") && text.len() < 100 {  // Avoid grabbing large text blocks
+                // Simplistic extraction - in production code, you'd use a more precise regex
+                return Some(text.split('\n').next().unwrap_or(&text).trim().to_string());
+            }
+        }
+        
+        None
+    }
+
+    pub fn find_price_with_regex(&self, html_content: &str) -> Option<String> {
+        let price_regex = Regex::new(r"R\$\s?(\d+[,.]\d+)").ok()?;
+        
+        let prices: Vec<f64> = price_regex.captures_iter(html_content)
+            .filter_map(|cap| {
+                cap.get(1).and_then(|price_match| {
+                    let price_str = price_match.as_str().replace(',', ".");
+                    price_str.parse::<f64>().ok()
+                })
+            })
+            .collect();
+        
+        // Return lowest price if found
+        if !prices.is_empty() {
+            let mut sorted_prices = prices.clone();
+            sorted_prices.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            
+            return Some(format!("R$ {:.2}", sorted_prices[0]).replace('.', ","));
+        }
+        
+        None
+    }
 
     // Extracts and adapts existing functionality from scraper module
     async fn scrape_events_page(

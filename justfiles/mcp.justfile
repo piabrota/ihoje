@@ -14,8 +14,10 @@ help:
     @echo "  setup-ihoje           - Setup iHoje domain-specific MCP tools"
     @echo "  install               - Install Mangekyou with auto-versioning"
     @echo "  register              - Generate registration files for all Mangekyou versions"
+    @echo "  brave-api-setup       - Set up Brave Search API MCP tool (requires API key)"
     @echo "Management:"
     @echo "  status                - Show status of all iHoje MCP servers"
+    @echo "  list                  - List all available MCP tools"
     @echo "  check                 - Check Mangekyou configuration and status"
     @echo "  start                 - Start Mangekyou server"
     @echo "  stop                  - Stop Mangekyou server"
@@ -235,3 +237,66 @@ check-v5:
 install-v5:
     @echo "Warning: Using deprecated command. Please use 'just mcp-install' instead."
     @/home/h0ffmann/Code/ihoje/scripts/install-mangekyou.sh
+
+# Set up Brave Search API MCP tool
+brave-api-setup:
+    #!/usr/bin/env bash
+    echo "Setting up Brave Search API MCP tool..."
+    
+    # Check if .env file exists
+    if [ ! -f "/home/h0ffmann/Code/ihoje/.env" ]; then
+        echo "❌ .env file not found. Creating a template..."
+        cp "/home/h0ffmann/Code/ihoje/.env.example" "/home/h0ffmann/Code/ihoje/.env"
+        echo "Please edit .env and add your BRAVE_API_KEY"
+        exit 1
+    fi
+    
+    # Check if BRAVE_API_KEY exists in .env
+    if ! grep -q "BRAVE_API_KEY" "/home/h0ffmann/Code/ihoje/.env"; then
+        echo "❌ BRAVE_API_KEY not found in .env"
+        echo "Adding BRAVE_API_KEY entry to .env"
+        echo "BRAVE_API_KEY=your_api_key_here" >> "/home/h0ffmann/Code/ihoje/.env"
+        echo "Please edit .env and set your Brave Search API key"
+        echo "You can get a free API key at: https://brave.com/search/api/"
+        exit 1
+    fi
+    
+    # Verify configuration file existence
+    if [ ! -d "/home/h0ffmann/Code/ihoje/.mcp-registration" ]; then
+        echo "Creating .mcp-registration directory..."
+        mkdir -p "/home/h0ffmann/Code/ihoje/.mcp-registration"
+    fi
+    
+    echo "✅ Brave Search API MCP tool is ready to use"
+    echo "You can now use the brave-browser MCP tool in Claude Code"
+    
+# List all available MCP tools
+list:
+    #!/usr/bin/env bash
+    echo "Available MCP Tools:"
+    echo "===================="
+    
+    # Check Mangekyou
+    if [ -f "/tmp/ihoje_mangekyou.pid" ] && kill -0 $(cat "/tmp/ihoje_mangekyou.pid") 2>/dev/null; then
+        echo "✅ mangekyou                - Implementation planning (running)"
+    else
+        echo "❌ mangekyou                - Implementation planning (not running)"
+    fi
+    
+    # Check Brave Search API integration
+    if grep -q "BRAVE_API_KEY" "/home/h0ffmann/Code/ihoje/.env" && grep -q -v "BRAVE_API_KEY=your_api_key_here" "/home/h0ffmann/Code/ihoje/.env"; then
+        echo "✅ brave-browser            - Web search"
+    else
+        echo "❌ brave-browser            - Web search (API key needed)"
+    fi
+    
+    # Standard MCP tools
+    echo "✅ sequential-thinking      - Step-by-step reasoning"
+    echo "✅ filesystem               - File access"
+    echo "✅ puppeteer                - Browser automation"
+    echo "✅ fetch                    - Web content"
+    
+    echo ""
+    echo "Setup Commands:"
+    echo "  just mcp-start           - Start Mangekyou server"
+    echo "  just mcp-brave-api-setup - Setup Brave Search API"

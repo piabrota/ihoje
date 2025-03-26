@@ -1,17 +1,28 @@
-pub mod pikachu;  // Main event provider
-pub mod charmander;  // Secondary event provider
+pub mod charmander;
+pub mod pikachu; // Main event provider // Secondary event provider
 
 use crate::config::AppConfig;
 use crate::event::EventData;
 use anyhow::Result;
 
-pub use pikachu::PikachuProvider;
 pub use charmander::CharmanderProvider;
+pub use pikachu::PikachuProvider;
 
 pub trait EventProvider {
     // Using impl Future instead of async fn, explicitly specifying Send bound
     // for better compatibility with Rust 1.84's async trait features
-    fn fetch_events<'a>(&'a self, config: &'a AppConfig) -> impl std::future::Future<Output = Result<Vec<EventData>>> + Send + 'a;
+
+    /// Fetch events from the provider
+    ///
+    /// The provider implementation should respect the `use_firecrawl` flag in the config:
+    /// - When `true`, use the FireCrawl API for scraping
+    /// - When `false`, use local files from `extraction_folder` (HTTrack extraction)
+    fn fetch_events<'a>(
+        &'a self,
+        config: &'a AppConfig,
+    ) -> impl std::future::Future<Output = Result<Vec<EventData>>> + Send + 'a;
+
+    /// Get the name of the provider
     fn name(&self) -> &'static str;
 }
 
@@ -29,7 +40,7 @@ impl Provider {
             Provider::Charmander(provider) => provider.fetch_events(config).await,
         }
     }
-    
+
     // Get the name of the provider
     pub fn name(&self) -> &'static str {
         match self {

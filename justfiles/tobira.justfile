@@ -43,6 +43,10 @@ help:
     @echo "  restart-tobira - Restart Shinri no Tobira with latest changes (port 8081)"
     @echo "  redeploy-tobira - Redeploy both mock and Shinri no Tobira containers with separate ports"
     @echo ""
+    @echo "Debugging:"
+    @echo "  debug-dump  - Dump Tobira debugging information for LLM analysis"
+    @echo "  debug-wasm  - Collect WebAssembly initialization logs and files"
+    @echo ""
     @echo "Deployment:"
     @echo "  release     - Build optimized release"
     @echo "  bundle      - Create deployable bundle"
@@ -92,12 +96,48 @@ serve: dev-docker
     @echo "NOTE: Tobira serving is now Docker-only for consistency"
 
 # Start dev server with auto-reload (Docker only)
-dev: dev-docker
-    @echo "NOTE: Tobira development is now Docker-only for consistency"
+dev:
+    #!/usr/bin/env bash
+    ROOT_DIR="$(git rev-parse --show-toplevel)"
+    cd "$ROOT_DIR/tobira"
+    
+    # Check if docker-compose.yml exists
+    if [ ! -f "docker-compose.yml" ]; then
+        echo "Error: docker-compose.yml not found. Make sure you're in the right directory."
+        exit 1
+    fi
+    
+    # Run the docker-compose script to start/rebuild containers
+    bash run-tobiras-docker-compose.sh
+    
+    # Wait for services to start
+    echo "Waiting for WebAssembly Tobira to start..."
+    sleep 3
+    
+    # Display URL
+    echo "✅ WebAssembly Tobira is running at http://localhost:8081"
 
 # Start dev server with mock data (Docker only)
-dev-mock: dev-docker-mock
-    @echo "NOTE: Tobira development is now Docker-only for consistency"
+dev-mock:
+    #!/usr/bin/env bash
+    ROOT_DIR="$(git rev-parse --show-toplevel)"
+    cd "$ROOT_DIR/tobira"
+    
+    # Check if docker-compose.yml exists
+    if [ ! -f "docker-compose.yml" ]; then
+        echo "Error: docker-compose.yml not found. Make sure you're in the right directory."
+        exit 1
+    fi
+    
+    # Run the docker-compose script to start/rebuild containers
+    bash run-tobiras-docker-compose.sh
+    
+    # Wait for services to start
+    echo "Waiting for Mock Tobira to start..."
+    sleep 3
+    
+    # Display URL
+    echo "✅ Mock Tobira is running at http://localhost:8080"
 
 # Check for errors
 check: _set-dir
@@ -229,48 +269,270 @@ redeploy-tobira:
     echo "✅ Both Tobira containers have been redeployed!"
     echo "📱 Mock Tobira: http://localhost:8080"
     echo "🧩 Shinri no Tobira: http://localhost:8081"
-    
-# Start dev server in Docker
-dev-docker: docker-build
-    #!/usr/bin/env bash
-    echo "Opening the Gate of Truth in Docker on http://localhost:8080..."
-    
-    # Detect if podman is available, otherwise use docker
-    if command -v podman &> /dev/null; then
-        CONTAINER_CMD="podman"
-    else
-        CONTAINER_CMD="docker"
-    fi
-    
-    ROOT_DIR="$(git rev-parse --show-toplevel)"
-    # Start container with -t flag but don't require stdin
-    $CONTAINER_CMD run --rm -t -p 8080:8080 \
-        -v "$ROOT_DIR/tobira/src:/app/tobira/src:Z" \
-        -v "$ROOT_DIR/tobira/index.html:/app/tobira/index.html:Z" \
-        -v "$ROOT_DIR/ihoje_models:/app/ihoje_models:Z" \
-        shinri-no-tobira:dev
 
-# Start dev server with mock data in Docker
-dev-docker-mock: docker-build
+# Dump Tobira debugging information for LLM analysis
+debug-dump:
     #!/usr/bin/env bash
-    echo "Opening the Mock Gate in Docker on http://localhost:8080..."
+    set -e
     
-    # Detect if podman is available, otherwise use docker
-    if command -v podman &> /dev/null; then
-        CONTAINER_CMD="podman"
+    # Create timestamped directory for debug info
+    TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+    DEBUG_DIR="./tobira_debug_${TIMESTAMP}"
+    mkdir -p "${DEBUG_DIR}"
+    
+    echo "Creating Tobira debug dump at ${DEBUG_DIR}..."
+    
+    # Function to copy file with header
+    copy_with_header() {
+        local file=$1
+        local dest_file="${DEBUG_DIR}/$(basename ${file})"
+        echo -e "\n\n# =============================================" > "${dest_file}"
+        echo -e "# FILE: ${file}" >> "${dest_file}"
+        echo -e "# =============================================\n" >> "${dest_file}"
+        cat "${file}" >> "${dest_file}" 2>/dev/null || echo "# FILE NOT FOUND OR EMPTY" >> "${dest_file}"
+        echo "Copied ${file}"
+    }
+    
+    # Collect critical client-side files
+    echo "Collecting client-side files..."
+    CRITICAL_FILES=(
+        "tobira/index.html"
+        "tobira/env.js"
+        "tobira/auth-debug.js"
+        "tobira/dist/bootstrap.js"
+        "tobira/fixed_server.py"
+        "tobira/spa_server.py"
+        "tobira/build.sh"
+    )
+    
+    for file in "${CRITICAL_FILES[@]}"; do
+        if [ -f "${file}" ]; then
+            copy_with_header "${file}"
+        else
+            echo "Warning: ${file} not found, skipping"
+        fi
+    done
+    
+    # Collect Docker-related files
+    echo "Collecting Docker files..."
+    DOCKER_FILES=(
+        "tobira/Dockerfile"
+        "tobira/Dockerfile.simple"
+        "tobira/docker-restart.sh"
+        "tobira/run-both-tobiras.sh"
+        "tobira/check-tobiras.sh"
+    )
+    
+    for file in "${DOCKER_FILES[@]}"; do
+        if [ -f "${file}" ]; then
+            copy_with_header "${file}"
+        else
+            echo "Warning: ${file} not found, skipping"
+        fi
+    done
+    
+    # Collect important Rust source files
+    echo "Collecting Rust source files..."
+    RUST_FILES=(
+        "tobira/src/main.rs"
+        "tobira/src/lib.rs"
+        "tobira/src/router.rs"
+        "tobira/src/pages/login_page.rs"
+        "tobira/src/pages/admin/dashboard.rs"
+        "tobira/src/api/client.rs"
+        "tobira/src/utils/config.rs"
+    )
+    
+    for file in "${RUST_FILES[@]}"; do
+        if [ -f "${file}" ]; then
+            copy_with_header "${file}"
+        else
+            echo "Warning: ${file} not found, skipping"
+        fi
+    done
+    
+    # Collect Docker container information
+    echo "Collecting Docker container information..."
+    CONTAINER_INFO="${DEBUG_DIR}/container_info.txt"
+    echo -e "# ==============================================" > "${CONTAINER_INFO}"
+    echo -e "# DOCKER CONTAINER INFORMATION" >> "${CONTAINER_INFO}"
+    echo -e "# ==============================================\n" >> "${CONTAINER_INFO}"
+    
+    if docker ps | grep -q "ihoje-wasm"; then
+        echo -e "## Container Status\n" >> "${CONTAINER_INFO}"
+        docker ps --filter "name=ihoje-wasm" --format 'table {{".ID"}}\t{{".Image"}}\t{{".Status"}}\t{{".Ports"}}' >> "${CONTAINER_INFO}"
+        
+        echo -e "\n\n## Container Logs\n" >> "${CONTAINER_INFO}"
+        docker logs ihoje-wasm >> "${CONTAINER_INFO}" 2>&1
+        
+        echo -e "\n\n## Container Environment Variables\n" >> "${CONTAINER_INFO}"
+        docker exec ihoje-wasm env | sort >> "${CONTAINER_INFO}" 2>&1
+        
+        echo -e "\n\n## Container Process List\n" >> "${CONTAINER_INFO}"
+        docker exec ihoje-wasm ps -ef >> "${CONTAINER_INFO}" 2>&1
+        
+        echo -e "\n\n## Container Network Status\n" >> "${CONTAINER_INFO}"
+        docker exec ihoje-wasm netstat -tuln >> "${CONTAINER_INFO}" 2>&1
+        
+        echo -e "\n\n## Container Disk Usage\n" >> "${CONTAINER_INFO}"
+        docker exec ihoje-wasm du -sh /app/tobira/dist >> "${CONTAINER_INFO}" 2>&1
+        
+        echo -e "\n\n## Container File List\n" >> "${CONTAINER_INFO}"
+        docker exec ihoje-wasm find /app/tobira/dist -type f | sort >> "${CONTAINER_INFO}" 2>&1
+        
+        echo "Collected container information"
     else
-        CONTAINER_CMD="docker"
+        echo "Warning: ihoje-wasm container not running, skipping container info"
+        echo "Container 'ihoje-wasm' not running" >> "${CONTAINER_INFO}"
     fi
     
-    ROOT_DIR="$(git rev-parse --show-toplevel)"
+    # Generate instructions for browser console logs
+    echo -e "# ==============================================" > "${DEBUG_DIR}/browser_console_instructions.md"
+    echo -e "# BROWSER CONSOLE LOGGING INSTRUCTIONS" >> "${DEBUG_DIR}/browser_console_instructions.md"
+    echo -e "# ==============================================\n" >> "${DEBUG_DIR}/browser_console_instructions.md"
+    echo -e "To collect browser console logs:\n" >> "${DEBUG_DIR}/browser_console_instructions.md"
+    echo -e "1. Open http://localhost:8081 in your browser" >> "${DEBUG_DIR}/browser_console_instructions.md"
+    echo -e "2. Right-click and select 'Inspect' or press F12" >> "${DEBUG_DIR}/browser_console_instructions.md"
+    echo -e "3. Go to the 'Console' tab" >> "${DEBUG_DIR}/browser_console_instructions.md"
+    echo -e "4. Execute these diagnostic commands:\n" >> "${DEBUG_DIR}/browser_console_instructions.md"
+    echo -e "   \`\`\`javascript" >> "${DEBUG_DIR}/browser_console_instructions.md}"
+    echo -e "   console.log(\"WebAssembly Support:\", typeof WebAssembly);" >> "${DEBUG_DIR}/browser_console_instructions.md}"
+    echo -e "   console.log(\"Environment Variables:\", window.ihoje_env);" >> "${DEBUG_DIR}/browser_console_instructions.md}"
+    echo -e "   console.log(\"Auth State:\", window.debugAuth?.getAuthState());" >> "${DEBUG_DIR}/browser_console_instructions.md}"
+    echo -e "   \`\`\`\n" >> "${DEBUG_DIR}/browser_console_instructions.md}"
+    echo -e "5. Right-click in the console and select 'Save as...' to save the logs" >> "${DEBUG_DIR}/browser_console_instructions.md}"
+    echo -e "6. Add these logs to ${DEBUG_DIR}/browser_console.txt" >> "${DEBUG_DIR}/browser_console_instructions.md}"
     
-    # Start container with -t flag but don't require stdin
-    $CONTAINER_CMD run --rm -t -p 8080:8080 \
-        -v "$ROOT_DIR/tobira/src:/app/tobira/src:Z" \
-        -v "$ROOT_DIR/tobira/index.html:/app/tobira/index.html:Z" \
-        -v "$ROOT_DIR/ihoje_models:/app/ihoje_models:Z" \
-        shinri-no-tobira:mock
-        
-    # Display Docker images to show their creation time
-    echo "Current Tobira Docker images:"
-    $CONTAINER_CMD images shinri-no-tobira
+    # Create a combined file for easy LLM analysis
+    echo "Creating combined file for LLM analysis..."
+    COMBINED_FILE="${DEBUG_DIR}/tobira_debug_combined.txt"
+    echo -e "# TOBIRA WEBASSEMBLY FRONTEND DEBUG DUMP\n" > "${COMBINED_FILE}"
+    echo -e "Generated: $(date)\n" >> "${COMBINED_FILE}"
+    echo -e "This file contains a comprehensive debug dump of the Tobira WebAssembly frontend.\n" >> "${COMBINED_FILE}"
+    echo -e "## System Environment\n" >> "${COMBINED_FILE}"
+    echo -e "- Host System: $(uname -a)" >> "${COMBINED_FILE}"
+    echo -e "- Docker Version: $(docker --version)" >> "${COMBINED_FILE}"
+    echo -e "- Working Directory: $(pwd)" >> "${COMBINED_FILE}"
+    
+    # Add all files to the combined file
+    for file in "${DEBUG_DIR}"/*; do
+        if [ "${file}" != "${COMBINED_FILE}" ]; then
+            echo -e "\n\n=================================================================" >> "${COMBINED_FILE}"
+            echo -e "CONTENT OF: $(basename ${file})" >> "${COMBINED_FILE}"
+            echo -e "=================================================================\n" >> "${COMBINED_FILE}"
+            cat "${file}" >> "${COMBINED_FILE}"
+        fi
+    done
+    
+    echo -e "\nDebug dump completed at ${DEBUG_DIR}"
+    echo -e "Combined file: ${COMBINED_FILE}"
+    echo -e "\nTo analyze with an LLM, upload the combined file ${COMBINED_FILE}"
+
+# Collect WebAssembly initialization logs and files
+debug-wasm:
+    #!/usr/bin/env bash
+    set -e
+    
+    echo "Collecting WebAssembly initialization information..."
+    
+    # Create a debug log directory if it doesn't exist
+    mkdir -p ./wasm_debug
+    DEBUG_FILE="./wasm_debug/wasm_debug_$(date +"%Y%m%d_%H%M%S").log"
+    
+    echo "# WEBASSEMBLY INITIALIZATION DEBUG LOG" > "${DEBUG_FILE}"
+    echo "Generated: $(date)" >> "${DEBUG_FILE}"
+    echo "" >> "${DEBUG_FILE}"
+    
+    # Function to append command output to log
+    log_command() {
+        local cmd=$1
+        local title=$2
+        echo -e "\n## ${title}\n" >> "${DEBUG_FILE}"
+        echo -e "Command: ${cmd}\n" >> "${DEBUG_FILE}"
+        eval "${cmd}" >> "${DEBUG_FILE}" 2>&1 || echo "Command failed with error code $?" >> "${DEBUG_FILE}"
+    }
+    
+    # Check if the WASM container is running
+    if docker ps | grep -q "ihoje-wasm"; then
+        log_command "docker logs ihoje-wasm | grep -A 10 'WASM\|WebAssembly'" "WebAssembly Docker Logs"
+        log_command "docker exec ihoje-wasm find /app/tobira/dist -name '*.wasm' -ls" "WASM Files in Container"
+        log_command "docker exec ihoje-wasm cat /app/tobira/dist/bootstrap.js 2>/dev/null || echo 'File not found'" "Bootstrap.js Content"
+        log_command "docker exec ihoje-wasm file /app/tobira/dist/*.wasm 2>/dev/null || echo 'No WASM files found'" "WASM File Info"
+        log_command "docker exec ihoje-wasm ls -la /app/tobira/dist/ | grep -v total" "Files in dist directory"
+    else
+        echo "Container 'ihoje-wasm' is not running. Start it with 'just tobira-restart'." >> "${DEBUG_FILE}"
+    fi
+    
+    # Check for local WASM files
+    echo -e "\n## Local WebAssembly Files\n" >> "${DEBUG_FILE}"
+    find ./tobira -name "*.wasm" -type f -exec ls -la {} \; >> "${DEBUG_FILE}" 2>/dev/null || echo "No local WASM files found" >> "${DEBUG_FILE}"
+    
+    # Check critical files
+    log_command "cat ./tobira/env.js 2>/dev/null || echo 'File not found'" "env.js Content"
+    log_command "cat ./tobira/dist/bootstrap.js 2>/dev/null || echo 'File not found'" "Local bootstrap.js Content"
+    
+    # Check for network errors
+    log_command "docker exec ihoje-wasm curl -Is http://localhost:8080/ihoje-tobira_bg.wasm 2>/dev/null || echo 'File not accessible'" "WASM HTTP Headers Check"
+    
+    echo -e "\nWebAssembly debug information collected at ${DEBUG_FILE}"
+    echo "To diagnose WebAssembly initialization issues:"
+    echo "1. Check for proper MIME type ('application/wasm')"
+    echo "2. Verify file naming consistency (ihoje_frontend_bg.wasm vs ihoje-tobira_bg.wasm)"
+    echo "3. Look for JavaScript errors in browser console"
+    echo "4. Verify WebAssembly.instantiateStreaming fallback mechanisms"
+    
+# Start dev server in Docker - Uses docker-compose for consistency
+dev-docker:
+    #!/usr/bin/env bash
+    ROOT_DIR="$(git rev-parse --show-toplevel)"
+    cd "$ROOT_DIR/tobira"
+    
+    # Check if docker-compose.yml exists
+    if [ ! -f "docker-compose.yml" ]; then
+        echo "Error: docker-compose.yml not found. Make sure you're in the right directory."
+        exit 1
+    fi
+    
+    # Stop any running containers with the same service name
+    docker-compose stop tobira-wasm 2>/dev/null || true
+    
+    # Force rebuild and start just the WebAssembly container
+    docker-compose up -d --build --force-recreate tobira-wasm
+    
+    # Wait for service to start
+    echo "Waiting for WebAssembly Tobira to start..."
+    sleep 3
+    
+    # Display URL
+    echo "✅ WebAssembly Tobira is running at http://localhost:8081"
+    
+    # Show logs
+    echo "To view logs: docker-compose logs -f tobira-wasm"
+
+# Start dev server with mock data in Docker - Uses docker-compose for consistency
+dev-docker-mock:
+    #!/usr/bin/env bash
+    ROOT_DIR="$(git rev-parse --show-toplevel)"
+    cd "$ROOT_DIR/tobira"
+    
+    # Check if docker-compose.yml exists
+    if [ ! -f "docker-compose.yml" ]; then
+        echo "Error: docker-compose.yml not found. Make sure you're in the right directory."
+        exit 1
+    fi
+    
+    # Stop any running containers with the same service name
+    docker-compose stop tobira-mock 2>/dev/null || true
+    
+    # Force rebuild and start just the mock container
+    docker-compose up -d --build --force-recreate tobira-mock
+    
+    # Wait for service to start
+    echo "Waiting for Mock Tobira to start..."
+    sleep 3
+    
+    # Display URL
+    echo "✅ Mock Tobira is running at http://localhost:8080"
+    
+    # Show logs
+    echo "To view logs: docker-compose logs -f tobira-mock"

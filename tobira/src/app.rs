@@ -1,17 +1,17 @@
+use web_sys::window;
 use yew::prelude::*;
 use yew_router::prelude::*;
-use web_sys::window;
 
-use crate::router::{Route, switch};
-use crate::i18n::{use_i18n, LanguageToggle, Language, TranslationKey};
-use crate::components::{AuthProvider, use_auth};
+use crate::components::{use_auth, AuthProvider};
+use crate::i18n::{use_i18n, Language, LanguageToggle, TranslationKey};
+use crate::router::{switch, Route};
 
 /// User profile component in header
 #[function_component(UserProfileSection)]
 fn user_profile_section() -> Html {
     let auth = use_auth();
     let i18n = use_i18n::<Language, TranslationKey>();
-    
+
     if auth.state.loading {
         return html! {
             <div class="user-profile loading">
@@ -19,7 +19,7 @@ fn user_profile_section() -> Html {
             </div>
         };
     }
-    
+
     if let Some(user) = &auth.state.user {
         // User is logged in
         html! {
@@ -46,8 +46,8 @@ fn user_profile_section() -> Html {
                             html! {}
                         }
                     }
-                    <button 
-                        class="dropdown-item logout-button" 
+                    <button
+                        class="dropdown-item logout-button"
                         onclick={auth.logout.reform(|_| ())}>
                         <i class="fas fa-sign-out-alt"></i>{" Logout"}
                     </button>
@@ -71,7 +71,7 @@ fn user_profile_section() -> Html {
 pub fn main_layout(props: &ChildrenProps) -> Html {
     let i18n = use_i18n::<Language, TranslationKey>();
     let auth = use_auth();
-    
+
     html! {
         <div class="app-container">
             <header class="app-header">
@@ -99,11 +99,11 @@ pub fn main_layout(props: &ChildrenProps) -> Html {
                     <UserProfileSection />
                 </nav>
             </header>
-            
+
             <main class="app-content">
                 { for props.children.iter() }
             </main>
-            
+
             <footer class="app-footer">
                 <div class="footer-content">
                     <div class="footer-section">
@@ -132,26 +132,26 @@ pub fn app() -> Html {
             let path = window()
                 .and_then(|w| w.location().pathname().ok())
                 .unwrap_or_else(|| "/".to_string());
-                
+
             // Check if the path needs special handling
             let known_paths = [
-                "/", 
-                "/login", 
-                "/auth/callback", 
-                "/admin", 
-                "/admin/events", 
+                "/",
+                "/login",
+                "/auth/callback",
+                "/admin",
+                "/admin/events",
                 "/admin/event/new",
                 "/maintenance",
-                "/error"
+                "/error",
             ];
-            
+
             let is_event_detail = path.starts_with("/event/");
             let is_admin_edit = path.starts_with("/admin/event/") && path.ends_with("/edit");
-            
+
             // If the path doesn't match known routes, navigate to home
             if !is_event_detail && !is_admin_edit && !known_paths.contains(&path.as_str()) {
                 log::info!("Redirecting unknown path to home: {}", path);
-                
+
                 // Use history API to navigate to home
                 if let Some(window) = window() {
                     // Force a reload of the page
@@ -161,12 +161,12 @@ pub fn app() -> Html {
                         .and_then(|loc| loc.replace("/").ok());
                 }
             }
-            
+
             || ()
         },
         (),
     );
-    
+
     // Initialize Supabase Auth
     use_effect_with_deps(
         |_| {
@@ -174,12 +174,12 @@ pub fn app() -> Html {
             if let Err(e) = crate::api::SupabaseAuth::inject_supabase_script() {
                 log::error!("Failed to inject Supabase client script: {:?}", e);
             }
-            
+
             || ()
         },
         (),
     );
-    
+
     // Check server status on startup, unless we're already on maintenance or error pages
     use_effect_with_deps(
         |_| {
@@ -187,18 +187,18 @@ pub fn app() -> Html {
             let path = window()
                 .and_then(|w| w.location().pathname().ok())
                 .unwrap_or_else(|| "/".to_string());
-                
+
             if path != "/maintenance" && path != "/error" {
                 // Create API client and check server status
                 let api_client = crate::api::ApiClient::new();
-                
+
                 wasm_bindgen_futures::spawn_local(async move {
                     // Check server health status
                     let _ = api_client.check_server_status().await;
                     // Navigating to error/maintenance pages is handled inside the method if needed
                 });
             }
-            
+
             || ()
         },
         (),

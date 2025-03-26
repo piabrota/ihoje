@@ -1,5 +1,5 @@
-mod view;
 mod card;
+mod view;
 
-pub use view::EventCardView;
 pub use card::EventCard;
+pub use view::EventCardView;

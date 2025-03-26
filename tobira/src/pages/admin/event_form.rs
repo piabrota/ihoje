@@ -1,15 +1,15 @@
+use gloo::console::log;
+use wasm_bindgen::JsCast;
+use wasm_bindgen_futures;
+use web_sys::{HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use web_sys::{HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement};
-use gloo::console::log;
-use wasm_bindgen_futures;
-use wasm_bindgen::JsCast;
 
 use crate::api::{ApiClient, ApiError};
-use crate::models::Event;
-use crate::components::{LoadingIndicator, ErrorDisplay};
-use crate::router::Route;
+use crate::components::{ErrorDisplay, LoadingIndicator};
 use crate::i18n::{use_i18n, Language, TranslationKey};
+use crate::models::Event;
+use crate::router::Route;
 use crate::utils::use_api_query;
 
 /// Properties for the event form
@@ -58,13 +58,13 @@ pub fn admin_new_event() -> Html {
 #[function_component(AdminEditEvent)]
 pub fn admin_edit_event() -> Html {
     let route = use_route::<Route>().unwrap();
-    
+
     // Extract event ID from route
     let event_id = match route {
         Route::AdminEditEvent { id } => Some(id),
         _ => None,
     };
-    
+
     html! {
         <EventForm event_id={event_id} />
     }
@@ -76,33 +76,33 @@ fn event_form(props: &EventFormProps) -> Html {
     let i18n = use_i18n::<Language, TranslationKey>();
     let navigator = use_navigator().unwrap();
     let client = use_memo(|_| ApiClient::new(), ());
-    
+
     // Form state
     let form_data = use_state(EventFormData::default);
-    
+
     // Validation state
     let validation_errors = use_state(|| Vec::<String>::new());
-    
+
     // Submission state
     let is_submitting = use_state(|| false);
     let submit_error = use_state(|| None::<String>);
-    
+
     // If editing, fetch the event data
     let (event, is_loading, fetch_error) = if let Some(id) = &props.event_id {
         let client = client.clone();
         let id = id.clone();
-        
+
         let (event, is_loading, error) = use_api_query(move || {
             let client = client.clone();
             let id = id.clone();
             async move { client.fetch_event(&id).await }
         });
-        
+
         // When event data is loaded, update form data
         {
             let form_data = form_data.clone();
             let event = event.clone();
-            
+
             use_effect_with_deps(
                 move |event| {
                     if let Some(event_data) = event {
@@ -113,23 +113,23 @@ fn event_form(props: &EventFormProps) -> Html {
                 event.clone(),
             );
         }
-        
+
         (event, is_loading, error)
     } else {
         (None, false, None)
     };
-    
+
     // Handle form input changes
     let handle_input_change = {
         let form_data = form_data.clone();
-        
+
         Callback::from(move |e: Event| {
             let target = e.target().unwrap();
             let field_name = target.unchecked_ref::<HtmlInputElement>().name();
             let value = target.unchecked_ref::<HtmlInputElement>().value();
-            
+
             let mut updated_data = (*form_data).clone();
-            
+
             match field_name.as_str() {
                 "title" => updated_data.title = value,
                 "date" => updated_data.date = value,
@@ -139,26 +139,26 @@ fn event_form(props: &EventFormProps) -> Html {
                 "price" => updated_data.price = value,
                 _ => {}
             }
-            
+
             form_data.set(updated_data);
         })
     };
-    
+
     // Handle select input changes
     let handle_select_change = {
         let form_data = form_data.clone();
-        
+
         Callback::from(move |e: Event| {
             let target = e.target().unwrap();
             let select = target.dyn_into::<HtmlSelectElement>().unwrap();
             let value = select.value();
-            
+
             let mut updated_data = (*form_data).clone();
             updated_data.city = value;
             form_data.set(updated_data);
         })
     };
-    
+
     // Handle form submission
     let handle_submit = {
         let form_data = form_data.clone();
@@ -168,42 +168,42 @@ fn event_form(props: &EventFormProps) -> Html {
         let client = client.clone();
         let event_id = props.event_id.clone();
         let navigator = navigator.clone();
-        
+
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
-            
+
             // Reset error states
             validation_errors.set(Vec::new());
             submit_error.set(None);
-            
+
             // Validate form
             let mut errors = Vec::new();
             let data = (*form_data).clone();
-            
+
             if data.title.is_empty() {
                 errors.push("Title is required".to_string());
             }
-            
+
             if data.date.is_empty() {
                 errors.push("Date is required".to_string());
             }
-            
+
             if data.location.is_empty() {
                 errors.push("Location is required".to_string());
             }
-            
+
             if data.city.is_empty() {
                 errors.push("City is required".to_string());
             }
-            
+
             if !errors.is_empty() {
                 validation_errors.set(errors);
                 return;
             }
-            
+
             // Set submitting state
             is_submitting.set(true);
-            
+
             // Prepare data for submission
             let mut event = Event {
                 id: event_id.clone().unwrap_or_else(|| "".to_string()),
@@ -215,13 +215,13 @@ fn event_form(props: &EventFormProps) -> Html {
                 city: data.city.clone(),
                 price: data.price.clone(),
             };
-            
+
             // Submit data
             let client = client.clone();
             let navigator = navigator.clone();
             let is_submitting = is_submitting.clone();
             let submit_error = submit_error.clone();
-            
+
             wasm_bindgen_futures::spawn_local(async move {
                 let result = if let Some(_) = event_id {
                     // Update existing event
@@ -230,7 +230,7 @@ fn event_form(props: &EventFormProps) -> Html {
                     // Create new event
                     client.create_event(&event).await
                 };
-                
+
                 // Handle result
                 match result {
                     Ok(created_event) => {
@@ -243,12 +243,12 @@ fn event_form(props: &EventFormProps) -> Html {
                         submit_error.set(Some(err.to_string()));
                     }
                 }
-                
+
                 is_submitting.set(false);
             });
         })
     };
-    
+
     // Handle cancel button
     let handle_cancel = {
         let navigator = navigator.clone();
@@ -256,7 +256,7 @@ fn event_form(props: &EventFormProps) -> Html {
             navigator.push(&Route::AdminEvents);
         })
     };
-    
+
     // Display loading state if fetching event data
     if is_loading {
         return html! {
@@ -266,7 +266,7 @@ fn event_form(props: &EventFormProps) -> Html {
             </div>
         };
     }
-    
+
     // Display error if fetch failed
     if let Some(error) = fetch_error {
         return html! {
@@ -281,15 +281,19 @@ fn event_form(props: &EventFormProps) -> Html {
             </div>
         };
     }
-    
+
     // Determine if we're editing or creating
     let is_editing = props.event_id.is_some();
-    let title = if is_editing { "Edit Event" } else { "Add New Event" };
-    
+    let title = if is_editing {
+        "Edit Event"
+    } else {
+        "Add New Event"
+    };
+
     html! {
         <div class="admin-event-form-container">
             <h1 class="admin-title">{title}</h1>
-            
+
             // Display validation errors
             if !(*validation_errors).is_empty() {
                 <div class="validation-errors">
@@ -299,18 +303,18 @@ fn event_form(props: &EventFormProps) -> Html {
                     </ul>
                 </div>
             }
-            
+
             // Display submission error
             if let Some(error) = (*submit_error).clone() {
                 <div class="submit-error">
                     <p>{format!("Error: {}", error)}</p>
                 </div>
             }
-            
+
             <form class="admin-form" onsubmit={handle_submit}>
                 <div class="form-group">
                     <label for="title">{"Event Title:"}</label>
-                    <input 
+                    <input
                         type="text"
                         id="title"
                         name="title"
@@ -319,10 +323,10 @@ fn event_form(props: &EventFormProps) -> Html {
                         required=true
                     />
                 </div>
-                
+
                 <div class="form-group">
                     <label for="date">{"Event Date:"}</label>
-                    <input 
+                    <input
                         type="date"
                         id="date"
                         name="date"
@@ -331,10 +335,10 @@ fn event_form(props: &EventFormProps) -> Html {
                         required=true
                     />
                 </div>
-                
+
                 <div class="form-group">
                     <label for="location">{"Location:"}</label>
-                    <input 
+                    <input
                         type="text"
                         id="location"
                         name="location"
@@ -343,10 +347,10 @@ fn event_form(props: &EventFormProps) -> Html {
                         required=true
                     />
                 </div>
-                
+
                 <div class="form-group">
                     <label for="city">{"City:"}</label>
-                    <select 
+                    <select
                         id="city"
                         name="city"
                         value={form_data.city.clone()}
@@ -359,10 +363,10 @@ fn event_form(props: &EventFormProps) -> Html {
                         <option value="RJ">{"Rio de Janeiro"}</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="price">{"Price:"}</label>
-                    <input 
+                    <input
                         type="text"
                         id="price"
                         name="price"
@@ -371,10 +375,10 @@ fn event_form(props: &EventFormProps) -> Html {
                         placeholder="R$ 0,00 (Gratuito) or R$ XX,XX"
                     />
                 </div>
-                
+
                 <div class="form-group">
                     <label for="url">{"Event URL:"}</label>
-                    <input 
+                    <input
                         type="url"
                         id="url"
                         name="url"
@@ -383,10 +387,10 @@ fn event_form(props: &EventFormProps) -> Html {
                         placeholder="https://example.com/event"
                     />
                 </div>
-                
+
                 <div class="form-group">
                     <label for="image_url">{"Image URL:"}</label>
-                    <input 
+                    <input
                         type="url"
                         id="image_url"
                         name="image_url"
@@ -395,13 +399,13 @@ fn event_form(props: &EventFormProps) -> Html {
                         placeholder="https://example.com/image.jpg"
                     />
                 </div>
-                
+
                 <div class="form-actions">
                     <button type="button" class="admin-button secondary" onclick={handle_cancel}>
                         {"Cancel"}
                     </button>
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         class="admin-button primary"
                         disabled={*is_submitting}
                     >

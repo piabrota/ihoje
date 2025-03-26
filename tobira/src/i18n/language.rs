@@ -31,7 +31,7 @@ impl Language {
             Language::PT_BR => "pt-BR",
         }
     }
-    
+
     /// Returns the flag emoji for the language
     pub fn flag(&self) -> &'static str {
         match self {
@@ -39,23 +39,23 @@ impl Language {
             Language::PT_BR => "🇧🇷",
         }
     }
-    
+
     /// Returns all available languages
     pub fn all() -> Vec<Self> {
         vec![Language::EN, Language::PT_BR]
     }
-    
+
     /// Detects the language from the browser's language setting
     pub fn from_browser_language(browser_lang: &str) -> Self {
         let lang_code = browser_lang.to_lowercase();
-        
+
         if lang_code.starts_with("pt") || lang_code.starts_with("pt-br") {
             Language::PT_BR
         } else {
             Language::EN
         }
     }
-    
+
     /// Attempts to detect the browser language using web API
     pub fn detect_from_browser() -> Self {
         web_sys::window()

@@ -1,30 +1,30 @@
-use yew::prelude::*;
 use crate::i18n::{use_i18n, Language, TranslationKey};
+use yew::prelude::*;
 
 /// Properties for displaying an event card view
 #[derive(Properties, PartialEq)]
 pub struct EventCardViewProps {
     /// Event title
     pub title: String,
-    
+
     /// Event date (formatted)
     pub date: String,
-    
+
     /// Event location
     pub location: String,
-    
+
     /// Event price display string
     pub price: String,
-    
+
     /// Event image URL
     pub image_url: String,
-    
+
     /// Whether this is a free event
     pub is_free: bool,
-    
+
     /// Click callback
     pub on_click: Callback<MouseEvent>,
-    
+
     /// Optional additional classes
     #[prop_or_default]
     pub class: Classes,
@@ -34,16 +34,17 @@ pub struct EventCardViewProps {
 #[function_component(EventCardView)]
 pub fn event_card_view(props: &EventCardViewProps) -> Html {
     let i18n = use_i18n::<Language, TranslationKey>();
-    
+
     // Determine price class based on whether it's free
-    let price_class = if props.is_free { "price-free" } else { "price-paid" };
-    
+    let price_class = if props.is_free {
+        "price-free"
+    } else {
+        "price-paid"
+    };
+
     // Combine classes
-    let card_classes = classes!(
-        "event-card",
-        props.class.clone()
-    );
-    
+    let card_classes = classes!("event-card", props.class.clone());
+
     html! {
         <div class={card_classes} onclick={props.on_click.clone()}>
             <div class="event-image">

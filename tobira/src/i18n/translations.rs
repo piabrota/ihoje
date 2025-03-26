@@ -16,18 +16,30 @@ pub struct TranslationKey {
     pub copyright: String,
     pub refresh_page: String,
     pub try_homepage: String,
-    
+
     // Navigation
     pub home: String,
     pub events: String,
     pub about: String,
-    
+    pub donate: String,
+
+    // Donation page
+    pub donation_title: String,
+    pub donation_subtitle: String,
+    pub donation_thank_you: String,
+    pub donation_bitcoin: String,
+    pub donation_ethereum: String,
+    pub donation_monero: String,
+    pub donation_pix: String,
+    pub donation_scan_qr: String,
+    pub donation_address_copied: String,
+
     // Home page
     pub welcome_title: String,
     pub welcome_message: String,
     pub events_title: String,
     pub no_events_found: String,
-    
+
     // Events
     pub event_details: String,
     pub event_date: String,
@@ -38,7 +50,7 @@ pub struct TranslationKey {
     pub free_event: String,
     pub favorite_add: String,
     pub favorite_remove: String,
-    
+
     // Filters
     pub search_events: String,
     pub filter_by_city: String,
@@ -48,11 +60,11 @@ pub struct TranslationKey {
     pub filter_apply: String,
     pub filter_clear: String,
     pub all_cities: String,
-    
+
     // Footer
     pub footer_links: String,
     pub footer_copyright: String,
-    
+
     // Authentication
     pub login: String,
     pub logout: String,
@@ -65,13 +77,13 @@ pub struct TranslationKey {
     pub login_error: String,
     pub access_denied: String,
     pub access_denied_message: String,
-    
+
     // Maintenance page
     pub maintenance_title: String,
     pub maintenance_message: String,
     pub maintenance_footer: String,
     pub estimated_completion: String,
-    
+
     // Error page
     pub server_error_title: String,
     pub server_error_message: String,
@@ -82,7 +94,7 @@ pub struct TranslationKey {
 /// Get all available translations
 pub fn get_translations() -> HashMap<Language, TranslationKey> {
     let mut translations = HashMap::new();
-    
+
     // English translations
     translations.insert(Language::EN, TranslationKey {
         // Common
@@ -95,18 +107,30 @@ pub fn get_translations() -> HashMap<Language, TranslationKey> {
         copyright: "© 2025 iHoje - All events in one place".into(),
         refresh_page: "Refresh page".into(),
         try_homepage: "Try homepage".into(),
-        
+
         // Navigation
         home: "Home".into(),
         events: "Events".into(),
         about: "About".into(),
-        
+        donate: "Support Us".into(),
+
+        // Donation page
+        donation_title: "Support iHoje".into(),
+        donation_subtitle: "Help us continue bringing the best events to you".into(),
+        donation_thank_you: "Thank you for your support! Your contribution helps us continue to develop and maintain this service.".into(),
+        donation_bitcoin: "Bitcoin (BTC)".into(),
+        donation_ethereum: "Ethereum (ETH)".into(),
+        donation_monero: "Monero (XMR)".into(),
+        donation_pix: "PIX (Brazil)".into(),
+        donation_scan_qr: "Scan QR Code".into(),
+        donation_address_copied: "Address copied to clipboard!".into(),
+
         // Home page
         welcome_title: "Welcome to iHoje".into(),
         welcome_message: "Discover the best events happening near you.".into(),
         events_title: "Events".into(),
         no_events_found: "No events found.".into(),
-        
+
         // Events
         event_details: "Event Details".into(),
         event_date: "Date".into(),
@@ -117,7 +141,7 @@ pub fn get_translations() -> HashMap<Language, TranslationKey> {
         free_event: "Free".into(),
         favorite_add: "Add to favorites".into(),
         favorite_remove: "Remove from favorites".into(),
-        
+
         // Filters
         search_events: "Search events...".into(),
         filter_by_city: "Filter by city".into(),
@@ -127,11 +151,11 @@ pub fn get_translations() -> HashMap<Language, TranslationKey> {
         filter_apply: "Apply".into(),
         filter_clear: "Clear".into(),
         all_cities: "All cities".into(),
-        
+
         // Footer
         footer_links: "Links".into(),
         footer_copyright: "All rights reserved".into(),
-        
+
         // Authentication
         login: "Login".into(),
         logout: "Logout".into(),
@@ -141,23 +165,23 @@ pub fn get_translations() -> HashMap<Language, TranslationKey> {
         login_subtitle: "Sign in to access your account and manage events".into(),
         login_with_google: "Sign in with Google".into(),
         login_required: "You need to log in to access this page".into(),
-        login_error: "Failed to log in. Please try again.".into(), 
+        login_error: "Failed to log in. Please try again.".into(),
         access_denied: "Access Denied".into(),
         access_denied_message: "You don't have permission to access this area.".into(),
-        
+
         // Maintenance page
         maintenance_title: "We're under maintenance".into(),
         maintenance_message: "We're performing scheduled maintenance to improve your experience. Please check back soon.".into(),
         maintenance_footer: "Thank you for your patience.".into(),
         estimated_completion: "Estimated completion time:".into(),
-        
+
         // Error page
         server_error_title: "Server Error".into(),
         server_error_message: "Something went wrong on our server. We're working to fix the issue.".into(),
         server_error_details: "Our team has been notified and is working to resolve the issue as quickly as possible.".into(),
         report_error: "If the problem persists, please contact support.".into(),
     });
-    
+
     // Portuguese (Brazil) translations
     translations.insert(Language::PT_BR, TranslationKey {
         // Common
@@ -170,18 +194,30 @@ pub fn get_translations() -> HashMap<Language, TranslationKey> {
         copyright: "© 2025 iHoje - Todos os eventos em um só lugar".into(),
         refresh_page: "Atualizar página".into(),
         try_homepage: "Tentar página inicial".into(),
-        
+
         // Navigation
         home: "Início".into(),
         events: "Eventos".into(),
         about: "Sobre".into(),
-        
+        donate: "Apoie-nos".into(),
+
+        // Donation page
+        donation_title: "Apoie o iHoje".into(),
+        donation_subtitle: "Ajude-nos a continuar trazendo os melhores eventos para você".into(),
+        donation_thank_you: "Obrigado pelo seu apoio! Sua contribuição nos ajuda a continuar desenvolvendo e mantendo este serviço.".into(),
+        donation_bitcoin: "Bitcoin (BTC)".into(),
+        donation_ethereum: "Ethereum (ETH)".into(),
+        donation_monero: "Monero (XMR)".into(),
+        donation_pix: "PIX (Brasil)".into(),
+        donation_scan_qr: "Escanear Código QR".into(),
+        donation_address_copied: "Endereço copiado para a área de transferência!".into(),
+
         // Home page
         welcome_title: "Bem-vindo ao iHoje".into(),
         welcome_message: "Descubra os melhores eventos acontecendo perto de você.".into(),
         events_title: "Eventos".into(),
         no_events_found: "Nenhum evento encontrado.".into(),
-        
+
         // Events
         event_details: "Detalhes do Evento".into(),
         event_date: "Data".into(),
@@ -192,7 +228,7 @@ pub fn get_translations() -> HashMap<Language, TranslationKey> {
         free_event: "Gratuito".into(),
         favorite_add: "Adicionar aos favoritos".into(),
         favorite_remove: "Remover dos favoritos".into(),
-        
+
         // Filters
         search_events: "Buscar eventos...".into(),
         filter_by_city: "Filtrar por cidade".into(),
@@ -202,11 +238,11 @@ pub fn get_translations() -> HashMap<Language, TranslationKey> {
         filter_apply: "Aplicar".into(),
         filter_clear: "Limpar".into(),
         all_cities: "Todas as cidades".into(),
-        
+
         // Footer
         footer_links: "Links".into(),
         footer_copyright: "Todos os direitos reservados".into(),
-        
+
         // Authentication
         login: "Entrar".into(),
         logout: "Sair".into(),
@@ -219,19 +255,19 @@ pub fn get_translations() -> HashMap<Language, TranslationKey> {
         login_error: "Falha ao fazer login. Por favor, tente novamente.".into(),
         access_denied: "Acesso Negado".into(),
         access_denied_message: "Você não tem permissão para acessar esta área.".into(),
-        
+
         // Maintenance page
         maintenance_title: "Estamos em manutenção".into(),
         maintenance_message: "Estamos realizando uma manutenção programada para melhorar sua experiência. Por favor, volte em breve.".into(),
         maintenance_footer: "Obrigado pela sua paciência.".into(),
         estimated_completion: "Tempo estimado para conclusão:".into(),
-        
+
         // Error page
         server_error_title: "Erro no Servidor".into(),
         server_error_message: "Algo deu errado no nosso servidor. Estamos trabalhando para resolver o problema.".into(),
         server_error_details: "Nossa equipe foi notificada e está trabalhando para resolver o problema o mais rápido possível.".into(),
         report_error: "Se o problema persistir, entre em contato com o suporte.".into(),
     });
-    
+
     translations
 }

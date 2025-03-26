@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Mock version (port 8080) - simple and quick
+  tobira-mock:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: ihoje-mock
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./spa_server.py:/app/spa_server.py
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - IHOJE_ENVIRONMENT=development
+      - MIMETYPES_FORCE_PYTHON_WASM=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # WebAssembly version (port 8081)
+  tobira-wasm:
+    build:
+      context: ..
+      dockerfile: tobira/Dockerfile
+      target: dev
+    container_name: ihoje-wasm
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - IHOJE_ENVIRONMENT=development
+      - MIMETYPES_FORCE_PYTHON_WASM=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
