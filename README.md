@@ -1,5 +1,9 @@
 # iHoje Event Scraper
 
+> [!WARNING]
+> **This repository is archived and no longer maintained.** It is kept read-only for reference;
+> issues and pull requests are not accepted, and dependencies are not updated.
+
 A Rust-based event data collection system with anime-inspired module naming.
 
 ## Documentation
